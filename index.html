@@ -141,31 +141,49 @@ td {
     border-bottom:1px solid #e5e7eb;
 }
 
-/* ETIQUETAS DE ESTADO (NUEVOS COLORES) */
-.badge {
-    padding: 6px 12px;
-    border-radius: 20px;
+/* SELECTS DENTRO DE LA TABLA */
+table select {
+    width: auto;
+    padding: 6px 10px;
+    margin: 0;
     font-weight: bold;
     font-size: 13px;
-    display: inline-block;
+    border-radius: 20px;
+    border: none;
+    cursor: pointer;
+    outline: none;
 }
 
-/* Pendiente / Abierto -> Rojo */
-.badge-rojo {
-    background-color: #fee2e2;
+/* BOTÓN ELIMINAR */
+.btn-delete {
+    background: #fee2e2;
     color: #dc2626;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
 }
 
-/* En proceso -> Amarillo */
+.btn-delete:hover {
+    background: #fca5a5;
+}
+
+/* ESTADOS (COLORES EN SELECTS) */
+.badge-rojo {
+    background-color: #fee2e2 !important;
+    color: #dc2626 !important;
+}
+
 .badge-amarillo {
-    background-color: #fef3c7;
-    color: #d97706;
+    background-color: #fef3c7 !important;
+    color: #d97706 !important;
 }
 
-/* Completada / Cerrado -> Verde */
 .badge-verde {
-    background-color: #d1fae5;
-    color: #059669;
+    background-color: #d1fae5 !important;
+    color: #059669 !important;
 }
 
 /* SECCIONES */
@@ -249,6 +267,7 @@ td {
             <th>Fecha</th>
             <th>Horas</th>
             <th>Estado</th>
+            <th>Acciones</th>
         </tr>
     </thead>
     <tbody id="tabla"></tbody>
@@ -287,6 +306,7 @@ td {
             <th>Título</th>
             <th>Tipo</th>
             <th>Estado</th>
+            <th>Acciones</th>
         </tr>
     </thead>
     <tbody id="tablaReportes"></tbody>
@@ -314,19 +334,16 @@ function showSection(id){
 
 /* ACTIVIDADES */
 function render(){
-
     let tabla = document.getElementById("tabla");
     tabla.innerHTML = "";
 
     let horas = 0;
     let ok = 0;
 
-    actividades.forEach((a,i)=>{
-
+    actividades.forEach((a, i) => {
         horas += a.horas;
-        if(a.estado==="Completada") ok++;
+        if(a.estado === "Completada") ok++;
 
-        // Asignación de colores solicitada
         let claseEstado = "";
         if(a.estado === "Pendiente") claseEstado = "badge-rojo";
         if(a.estado === "En proceso") claseEstado = "badge-amarillo";
@@ -338,26 +355,47 @@ function render(){
             <td>${a.categoria}</td>
             <td>${a.fecha}</td>
             <td>${a.horas.toFixed(2)}</td>
-            <td><span class="badge ${claseEstado}">${a.estado}</span></td>
+            <td>
+                <select class="${claseEstado}" onchange="cambiarEstadoActividad(${i}, this.value)">
+                    <option value="Pendiente" ${a.estado === "Pendiente" ? "selected" : ""}>Pendiente</option>
+                    <option value="En proceso" ${a.estado === "En proceso" ? "selected" : ""}>En proceso</option>
+                    <option value="Completada" ${a.estado === "Completada" ? "selected" : ""}>Completada</option>
+                </select>
+            </td>
+            <td>
+                <button class="btn-delete" onclick="eliminarActividad(${i})">🗑️ Borrar</button>
+            </td>
         </tr>`;
     });
 
     document.getElementById("total").innerText = actividades.length;
     document.getElementById("horas").innerText = horas.toFixed(2);
     document.getElementById("cumplimiento").innerText =
-        actividades.length ? (ok/actividades.length*100).toFixed(0)+"%" : "0%";
+        actividades.length ? (ok / actividades.length * 100).toFixed(0) + "%" : "0%";
 
     localStorage.setItem("act", JSON.stringify(actividades));
 }
 
+function cambiarEstadoActividad(index, nuevoEstado) {
+    actividades[index].estado = nuevoEstado;
+    render();
+}
+
+function eliminarActividad(index) {
+    if(confirm("¿Seguro que deseas eliminar esta actividad?")) {
+        actividades.splice(index, 1);
+        render();
+    }
+}
+
 /* FORM ACTIVIDAD */
-actividadForm.onsubmit = e=>{
+actividadForm.onsubmit = e => {
     e.preventDefault();
 
     let h1 = hora_inicio.value.split(":");
     let h2 = hora_fin.value.split(":");
 
-    let horas = (parseInt(h2[0])+h2[1]/60)-(parseInt(h1[0])+h1[1]/60);
+    let horas = (parseInt(h2[0]) + h2[1] / 60) - (parseInt(h1[0]) + h1[1] / 60);
     
     if (horas < 0) {
         alert("La hora de fin no puede ser menor que la hora de inicio");
@@ -381,8 +419,7 @@ function renderRep(){
     let t = document.getElementById("tablaReportes");
     t.innerHTML = "";
 
-    reportes.forEach(r=>{
-        // Asignación de colores para reportes consistente con actividades
+    reportes.forEach((r, i) => {
         let claseRep = "";
         if(r.estado === "Abierto") claseRep = "badge-rojo";
         if(r.estado === "En proceso") claseRep = "badge-amarillo";
@@ -392,14 +429,35 @@ function renderRep(){
         <tr>
             <td>${r.titulo}</td>
             <td>${r.tipo}</td>
-            <td><span class="badge ${claseRep}">${r.estado}</span></td>
+            <td>
+                <select class="${claseRep}" onchange="cambiarEstadoReporte(${i}, this.value)">
+                    <option value="Abierto" ${r.estado === "Abierto" ? "selected" : ""}>Abierto</option>
+                    <option value="En proceso" ${r.estado === "En proceso" ? "selected" : ""}>En proceso</option>
+                    <option value="Cerrado" ${r.estado === "Cerrado" ? "selected" : ""}>Cerrado</option>
+                </select>
+            </td>
+            <td>
+                <button class="btn-delete" onclick="eliminarReporte(${i})">🗑️ Borrar</button>
+            </td>
         </tr>`;
     });
 
     localStorage.setItem("rep", JSON.stringify(reportes));
 }
 
-reporteForm.onsubmit = e=>{
+function cambiarEstadoReporte(index, nuevoEstado) {
+    reportes[index].estado = nuevoEstado;
+    renderRep();
+}
+
+function eliminarReporte(index) {
+    if(confirm("¿Seguro que deseas eliminar este reporte?")) {
+        reportes.splice(index, 1);
+        renderRep();
+    }
+}
+
+reporteForm.onsubmit = e => {
     e.preventDefault();
 
     reportes.push({
