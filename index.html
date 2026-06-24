@@ -182,54 +182,61 @@ td {
         </div>
     </div>
 </div>
+<!-- TODO TU HTML ARRIBA -->
 
 <!-- ACTIVIDADES -->
 <div id="actividades" class="section">
-
-<h1>Gestión de Actividades</h1>
-
-<form id="actividadForm">
-    <input id="titulo" placeholder="Título de la actividad" required>
-
-    <select id="categoria">
-        <option>Seguridad</option>
-        <option>Infraestructura</option>
-        <option>Ciberseguridad</option>
-        <option>Inspecciones</option>
-        <option>Auditorías</option>
-        <option>Otros</option>
-    </select>
-
-    <input type="date" id="fecha" required>
-
-    <input type="time" id="inicio" required>
-    <input type="time" id="fin" required>
-
-    <select id="estado">
-        <option>Pendiente</option>
-        <option>En proceso</option>
-        <option>Completada</option>
-    </select>
-
-    <textarea id="observacion" placeholder="Observaciones"></textarea>
-
-    <button type="submit">Guardar Actividad</button>
-</form>
-
-<table>
-    <thead>
-        <tr>
-            <th>Título</th>
-            <th>Categoría</th>
-            <th>Fecha</th>
-            <th>Horas</th>
-            <th>Estado</th>
-        </tr>
-    </thead>
-    <tbody id="tabla"></tbody>
-</table>
-
+    ...
 </div>
+<script>
+let actividades = JSON.parse(localStorage.getItem("act")) || [];
+
+document.getElementById("actividadForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    let actividad = {
+        titulo: document.getElementById("titulo").value,
+        categoria: document.getElementById("categoria").value,
+        fecha: document.getElementById("fecha").value,
+        inicio: document.getElementById("inicio").value,
+        fin: document.getElementById("fin").value,
+        estado: document.getElementById("estado").value,
+        observacion: document.getElementById("observacion").value
+    };
+
+    actividades.push(actividad);
+
+    localStorage.setItem("act", JSON.stringify(actividades));
+
+    renderTabla();
+
+    document.getElementById("actividadForm").reset();
+});
+
+function renderTabla() {
+    let tbody = document.getElementById("tabla");
+    tbody.innerHTML = "";
+
+    actividades.forEach((act) => {
+        let horas = act.inicio + " - " + act.fin;
+
+        tbody.innerHTML += `
+            <tr>
+                <td>${act.titulo}</td>
+                <td>${act.categoria}</td>
+                <td>${act.fecha}</td>
+                <td>${horas}</td>
+                <td>${act.estado}</td>
+            </tr>
+        `;
+    });
+}
+
+renderTabla();
+</script>
+
+</body>
+</html>
 
 <!-- REPORTES -->
 <div id="reportes" class="section">
