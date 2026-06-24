@@ -141,6 +141,33 @@ td {
     border-bottom:1px solid #e5e7eb;
 }
 
+/* ETIQUETAS DE ESTADO (NUEVOS COLORES) */
+.badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 13px;
+    display: inline-block;
+}
+
+/* Pendiente / Abierto -> Rojo */
+.badge-rojo {
+    background-color: #fee2e2;
+    color: #dc2626;
+}
+
+/* En proceso -> Amarillo */
+.badge-amarillo {
+    background-color: #fef3c7;
+    color: #d97706;
+}
+
+/* Completada / Cerrado -> Verde */
+.badge-verde {
+    background-color: #d1fae5;
+    color: #059669;
+}
+
 /* SECCIONES */
 .section {display:none;}
 .active {display:block;}
@@ -200,10 +227,7 @@ td {
 
     <input type="date" id="fecha" required>
 
-    <label for="hora_inicio">Hora Inicio:</label>
     <input type="time" id="hora_inicio" required>
-    
-    <label for="hora_fin">Hora Fin:</label>
     <input type="time" id="hora_fin" required>
 
     <select id="estado">
@@ -302,13 +326,19 @@ function render(){
         horas += a.horas;
         if(a.estado==="Completada") ok++;
 
+        // Asignación de colores solicitada
+        let claseEstado = "";
+        if(a.estado === "Pendiente") claseEstado = "badge-rojo";
+        if(a.estado === "En proceso") claseEstado = "badge-amarillo";
+        if(a.estado === "Completada") claseEstado = "badge-verde";
+
         tabla.innerHTML += `
         <tr>
             <td>${a.titulo}</td>
             <td>${a.categoria}</td>
             <td>${a.fecha}</td>
             <td>${a.horas.toFixed(2)}</td>
-            <td>${a.estado}</td>
+            <td><span class="badge ${claseEstado}">${a.estado}</span></td>
         </tr>`;
     });
 
@@ -324,13 +354,11 @@ function render(){
 actividadForm.onsubmit = e=>{
     e.preventDefault();
 
-    // Se usan los nuevos IDs corregidos
     let h1 = hora_inicio.value.split(":");
     let h2 = hora_fin.value.split(":");
 
     let horas = (parseInt(h2[0])+h2[1]/60)-(parseInt(h1[0])+h1[1]/60);
     
-    // Validar por si ponen una hora final menor a la inicial
     if (horas < 0) {
         alert("La hora de fin no puede ser menor que la hora de inicio");
         return;
@@ -354,11 +382,17 @@ function renderRep(){
     t.innerHTML = "";
 
     reportes.forEach(r=>{
+        // Asignación de colores para reportes consistente con actividades
+        let claseRep = "";
+        if(r.estado === "Abierto") claseRep = "badge-rojo";
+        if(r.estado === "En proceso") claseRep = "badge-amarillo";
+        if(r.estado === "Cerrado") claseRep = "badge-verde";
+
         t.innerHTML += `
         <tr>
             <td>${r.titulo}</td>
             <td>${r.tipo}</td>
-            <td>${r.estado}</td>
+            <td><span class="badge ${claseRep}">${r.estado}</span></td>
         </tr>`;
     });
 
