@@ -4,46 +4,71 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Monitoring, Compliance and Continuous Improvement System</title>
+
 <style>
 body {font-family: Arial, sans-serif; margin:0; background:#f4f6f9;}
+
 .sidebar {
     width:220px; height:100vh; position:fixed;
     background:#1f2937; color:white; padding:20px;
 }
+
 .sidebar h2 {margin-top:0;}
+
 .sidebar a {
     display:block; color:white; text-decoration:none;
     padding:10px 0;
 }
+
 .main {margin-left:240px; padding:20px;}
-.cards {display:flex; gap:20px; flex-wrap:wrap;}
+
+.cards {
+    display:flex; gap:20px; flex-wrap:wrap;
+}
+
 .card {
     background:white; padding:20px; border-radius:10px;
     box-shadow:0 2px 8px rgba(0,0,0,.1);
     flex:1; min-width:180px;
 }
+
 form {
     background:white; padding:20px; border-radius:10px;
     margin-top:20px;
 }
+
 input, select, textarea {
     width:100%; padding:10px; margin:8px 0;
 }
+
 button {
     background:#2563eb; color:white;
     border:none; padding:10px 20px;
     border-radius:6px; cursor:pointer;
 }
+
 table {
     width:100%; border-collapse:collapse;
     margin-top:20px; background:white;
 }
+
 th, td {
     border:1px solid #ddd; padding:10px;
 }
-th {background:#2563eb; color:white;}
+
+th {
+    background:#2563eb; color:white;
+}
+
+/* Colores de estado */
+.estado {
+    color:white;
+    padding:5px;
+    border-radius:5px;
+}
 </style>
 </head>
+
 <body>
 
 <div class="sidebar">
@@ -55,8 +80,10 @@ th {background:#2563eb; color:white;}
 </div>
 
 <div class="main">
+
     <h1>Monitoring, Compliance and Continuous Improvement System</h1>
 
+    <!-- CARDS -->
     <div class="cards">
         <div class="card">
             <h3>Total Actividades</h3>
@@ -70,10 +97,11 @@ th {background:#2563eb; color:white;}
 
         <div class="card">
             <h3>Nivel de Cumplimiento</h3>
-            <p id="Jhoan Hilario">0%</p>
+            <p id="cumplimiento">0%</p>
         </div>
     </div>
 
+    <!-- FORM -->
     <form id="actividadForm">
         <h2>Registrar Actividad</h2>
 
@@ -104,6 +132,7 @@ th {background:#2563eb; color:white;}
         <button type="submit">Guardar Actividad</button>
     </form>
 
+    <!-- TABLE -->
     <table>
         <thead>
             <tr>
@@ -114,37 +143,53 @@ th {background:#2563eb; color:white;}
                 <th>Estado</th>
             </tr>
         </thead>
-
         <tbody id="tabla"></tbody>
     </table>
+
 </div>
 
 <script>
 let actividades = JSON.parse(localStorage.getItem("actividades")) || [];
 
+/* COLOR SEGÚN ESTADO */
+function getColor(estado){
+    if(estado === "Completada") return "#16a34a"; // verde
+    if(estado === "En proceso") return "#f59e0b"; // amarillo
+    return "#dc2626"; // rojo
+}
+
+/* ACTUALIZAR UI */
 function actualizar() {
+
     let tabla = document.getElementById("tabla");
     tabla.innerHTML = "";
 
     let horasTotales = 0;
     let completadas = 0;
 
-    actividades.forEach(a => {
+    actividades.forEach((a, index) => {
+
+        if(a.estado === "Completada") completadas++;
+
+        horasTotales += a.horas;
+
         tabla.innerHTML += `
             <tr>
                 <td>${a.titulo}</td>
                 <td>${a.categoria}</td>
                 <td>${a.fecha}</td>
-                <td>${a.horas}</td>
-                <td>${a.estado}</td>
+                <td>${a.horas.toFixed(2)}</td>
+
+                <td>
+                    <select onchange="cambiarEstado(${index}, this.value)"
+                        style="background:${getColor(a.estado)}; color:white; border:none; padding:6px; border-radius:5px;">
+                        <option ${a.estado === "Pendiente" ? "selected" : ""}>Pendiente</option>
+                        <option ${a.estado === "En proceso" ? "selected" : ""}>En proceso</option>
+                        <option ${a.estado === "Completada" ? "selected" : ""}>Completada</option>
+                    </select>
+                </td>
             </tr>
         `;
-
-        horasTotales += a.horas;
-
-        if(a.estado === "Completada"){
-            completadas++;
-        }
     });
 
     document.getElementById("total").textContent = actividades.length;
@@ -160,6 +205,13 @@ function actualizar() {
     localStorage.setItem("actividades", JSON.stringify(actividades));
 }
 
+/* CAMBIAR ESTADO */
+function cambiarEstado(index, nuevoEstado){
+    actividades[index].estado = nuevoEstado;
+    actualizar();
+}
+
+/* GUARDAR ACTIVIDAD */
 document.getElementById("actividadForm")
 .addEventListener("submit", function(e){
     e.preventDefault();
