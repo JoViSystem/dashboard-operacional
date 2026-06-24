@@ -37,7 +37,6 @@ body {
     position: relative;
 }
 
-/* Detalle estético alusivo a seguridad en el login */
 .login-container::before {
     content: "";
     position: absolute;
@@ -218,10 +217,25 @@ form {
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
+.form-group-row {
+    display: flex;
+    gap: 15px;
+}
+
+.form-group-row > div {
+    flex: 1;
+}
+
+label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #475569;
+}
+
 input, select, textarea {
     width: 100%;
     padding: 12px 14px;
-    margin: 8px 0 16px 0;
+    margin: 6px 0 16px 0;
     font-size: 15px;
     border-radius: 8px;
     border: 1px solid #cbd5e1;
@@ -320,10 +334,14 @@ table select {
     border-color: var(--sec-red);
 }
 
-/* BADGES MODERNOS DE ESTADO */
+/* BADGES MODERNOS DE ESTADO Y CRITICIDAD */
 .badge-rojo { background-color: #fee2e2 !important; color: #b91c1c !important; }
 .badge-amarillo { background-color: #fef9c3 !important; color: #a16207 !important; }
 .badge-verde { background-color: #dcfce7 !important; color: #15803d !important; }
+
+.badge-crit-alto { background: #b91c1c; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+.badge-crit-medio { background: #d97706; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+.badge-crit-bajo { background: #059669; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; }
 
 /* SECCIONES */
 .section { display: none; }
@@ -361,6 +379,9 @@ table select {
 
 <div id="login-screen" class="login-container">
     <div class="login-card">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <img src="logo-departamento.png" alt="Logo Departamento" style="max-width: 160px; height: auto; fallback: url('https://via.placeholder.com/160x60?text=LOGO+HSE');" onerror="this.style.display='none'">
+        </div>
         <h2>🛡️ Control MC - Ingreso</h2>
         <form id="loginForm" onsubmit="login(event)">
             <input type="text" id="username" placeholder="Usuario" required>
@@ -378,7 +399,7 @@ table select {
 
         <a id="menu-inicio" onclick="showSection('inicio')" class="active-menu">📊 Inicio (Dashboard)</a>
         <a id="menu-actividades" onclick="showSection('actividades')">📋 Actividades</a>
-        <a id="menu-reportes" onclick="showSection('reportes')">⚠️ Reportes</a>
+        <a id="menu-reportes" onclick="showSection('reportes')">⚠️ Control de Reportes</a>
         <a id="menu-indicadores" onclick="showSection('indicadores')">📈 Indicadores</a>
         
         <a onclick="logout()" class="btn-logout">🚪 Cerrar Sesión</a>
@@ -458,32 +479,62 @@ table select {
         </div>
 
         <div id="reportes" class="section">
-            <h1>⚠️ Gestión de Reportes e Incidentes</h1>
+            <h1>⚠️ Mesa de Control de Reportes Recibidos</h1>
 
             <form id="reporteForm">
-                <input id="r_titulo" placeholder="Título del reporte o condición insegura" required>
-                <select id="r_tipo">
-                    <option>Infraestructura</option>
-                    <option>Seguridad</option>
-                    <option>Incidente</option>
-                    <option>Otros</option>
-                </select>
-                <textarea id="r_desc" placeholder="Descripción detallada de la anomalía observada"></textarea>
+                <div class="form-group-row">
+                    <div>
+                        <label>Título o Anomalía</label>
+                        <input id="r_titulo" placeholder="Ej: Extintor bloqueado o Cable expuesto" required>
+                    </div>
+                    <div>
+                        <label>Reportado por (Persona / Planta)</label>
+                        <input id="r_origen" placeholder="Ej: Ing. Carlos Mendoza o Operador Línea 2" required>
+                    </div>
+                </div>
+
+                <div class="form-group-row">
+                    <div>
+                        <label>Área o Tipo de Riesgo</label>
+                        <select id="r_tipo">
+                            <option>Infraestructura</option>
+                            <option>Seguridad</option>
+                            <option>Incidente</option>
+                            <option>Otros</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Nivel de Criticidad (Riesgo)</label>
+                        <select id="r_criticidad">
+                            <option value="Bajo">🟢 Bajo (Oportunidad de mejora)</option>
+                            <option value="Medio">🟡 Medio (Corrección programada)</option>
+                            <option value="Alto">🔴 Alto (Acción inmediata - Peligro)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <label>Descripción detallada de la solicitud o condición</label>
+                <textarea id="r_desc" placeholder="Detalles de lo reportado por el personal..."></textarea>
+                
+                <label>Estatus Inicial</label>
                 <select id="r_estado">
                     <option>Abierto</option>
                     <option>En proceso</option>
                     <option>Cerrado</option>
                 </select>
-                <button type="submit">🚨 Crear Reporte</button>
+                
+                <button type="submit">🚨 Registrar Reporte en Sistema</button>
             </form>
 
             <table>
                 <thead>
                     <tr>
-                        <th>Usuario</th>
-                        <th>Título</th>
-                        <th>Tipo</th>
-                        <th>Estado</th>
+                        <th>Encargado HSE</th>
+                        <th>Anomalía</th>
+                        <th>Reportado Por</th>
+                        <th>Área / Tipo</th>
+                        <th>Criticidad</th>
+                        <th>Estatus de Solución</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -572,7 +623,7 @@ function verificarSesion() {
     }
 }
 
-/* NAVIGATION (Actualiza clases activas en menú lateral) */
+/* NAVIGATION */
 function showSection(id){
     document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
     document.getElementById(id).classList.add("active");
@@ -657,7 +708,6 @@ function eliminarActividad(index) {
     }
 }
 
-/* FORM ACTIVIDAD */
 actividadForm.onsubmit = e => {
     e.preventDefault();
 
@@ -690,7 +740,7 @@ actividadForm.onsubmit = e => {
     updateCharts();
 };
 
-/* REPORTES */
+/* REPORTES CON SEMÁFORO DE CRITICIDAD */
 function renderRep(){
     let t = document.getElementById("tablaReportes");
     t.innerHTML = "";
@@ -706,14 +756,24 @@ function renderRep(){
         if(r.estado === "En proceso") claseRep = "badge-amarillo";
         if(r.estado === "Cerrado") claseRep = "badge-verde";
 
+        // Fallback por si hay reportes viejos sin origen o criticidad
+        let origenDisplay = r.origen || "Anonimo / Externo";
+        let critDisplay = r.criticidad || "Medio";
+        
+        let claseCrit = "badge-crit-medio";
+        if(critDisplay === "Alto") claseCrit = "badge-crit-alto";
+        if(critDisplay === "Bajo") claseCrit = "badge-crit-bajo";
+
         let deshabilitarSelect = (usuarioActivo.rol !== "admin" && r.usuario !== usuarioActivo.username) ? "disabled" : "";
         let nombreDisplay = USUARIOS_VALIDOS[r.usuario] ? USUARIOS_VALIDOS[r.usuario].nombre : "Desconocido";
 
         t.innerHTML += `
         <tr>
             <td style="font-weight:600; color:#1e293b;">👤 ${nombreDisplay}</td>
-            <td>${r.titulo}</td>
-            <td><span style="background:#f1f5f9; padding:4px 8px; border-radius:6px; font-size:13px; font-weight:500;">${r.tipo}</span></td>
+            <td><strong>${r.titulo}</strong></td>
+            <td style="color:#475569; font-size:14px;">📣 ${origenDisplay}</td>
+            <td><span style="background:#e2e8f0; padding:4px 8px; border-radius:6px; font-size:13px; font-weight:500;">${r.tipo}</span></td>
+            <td><span class="${claseCrit}">${critDisplay}</span></td>
             <td>
                 <select class="${claseRep}" onchange="cambiarEstadoReporte(${i}, this.value)" ${deshabilitarSelect}>
                     <option value="Abierto" ${r.estado === "Abierto" ? "selected" : ""}>🚨 Abierto</option>
@@ -754,7 +814,9 @@ reporteForm.onsubmit = e => {
     reportes.push({
         usuario: asignadoA,
         titulo: r_titulo.value,
+        origen: r_origen.value,
         tipo: r_tipo.value,
+        criticidad: r_criticidad.value,
         desc: r_desc.value,
         estado: r_estado.value
     });
