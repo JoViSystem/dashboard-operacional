@@ -6,47 +6,151 @@
 <title>Compliance & Continuous Improvement System</title>
 
 <style>
-body {font-family: Arial; margin:0; background:#f4f6f9;}
+body {
+    font-family: Arial, sans-serif;
+    margin:0;
+    background:#eef2f7;
+    color:#111827;
+}
 
+/* SIDEBAR */
 .sidebar {
-    width:220px; height:100vh; position:fixed;
-    background:#1f2937; color:white; padding:20px;
+    width:260px;
+    height:100vh;
+    position:fixed;
+    background:#111827;
+    color:white;
+    padding:25px;
+}
+
+.sidebar h2 {
+    font-size:20px;
+    margin-bottom:20px;
 }
 
 .sidebar a {
-    display:block; color:white; text-decoration:none;
-    padding:10px 10px;
+    display:block;
+    color:white;
+    text-decoration:none;
+    padding:12px 10px;
+    font-size:16px;
+    border-radius:6px;
+    margin-bottom:5px;
+}
+
+.sidebar a:hover {
+    background:#2563eb;
+}
+
+/* MAIN */
+.main {
+    margin-left:280px;
+    padding:30px;
+}
+
+/* TITULOS */
+h1 {
+    font-size:32px;
+    margin-bottom:20px;
+}
+
+h2 {
+    font-size:24px;
+}
+
+/* CARDS */
+.cards {
+    display:flex;
+    gap:20px;
+    flex-wrap:wrap;
+}
+
+.card {
+    background:white;
+    padding:25px;
+    border-radius:12px;
+    box-shadow:0 6px 18px rgba(0,0,0,.08);
+    flex:1;
+    min-width:220px;
+}
+
+.card h3 {
+    font-size:18px;
+}
+
+.card p {
+    font-size:28px;
+    font-weight:bold;
+}
+
+/* FORM */
+form {
+    background:white;
+    padding:25px;
+    border-radius:12px;
+    margin-top:25px;
+    box-shadow:0 6px 18px rgba(0,0,0,.08);
+}
+
+input, select, textarea {
+    width:100%;
+    padding:14px;
+    margin:10px 0;
+    font-size:16px;
+    border-radius:8px;
+    border:1px solid #d1d5db;
+}
+
+button {
+    background:#2563eb;
+    color:white;
+    border:none;
+    padding:14px 20px;
+    border-radius:8px;
+    font-size:16px;
     cursor:pointer;
 }
 
-.main {
-    margin-left:240px; padding:20px;
+button:hover {
+    background:#1d4ed8;
 }
 
+/* TABLE */
+table {
+    width:100%;
+    border-collapse:collapse;
+    margin-top:20px;
+    background:white;
+    border-radius:12px;
+    overflow:hidden;
+    box-shadow:0 6px 18px rgba(0,0,0,.08);
+}
+
+th {
+    background:#111827;
+    color:white;
+    padding:14px;
+    font-size:15px;
+}
+
+td {
+    padding:14px;
+    font-size:15px;
+    border-bottom:1px solid #e5e7eb;
+}
+
+/* SECCIONES */
 .section {display:none;}
 .active {display:block;}
 
-.cards {display:flex; gap:20px;}
-
-.card {
-    background:white; padding:15px;
-    border-radius:10px; flex:1;
-}
-
-/* estados */
-.badge {
-    padding:5px 8px;
-    border-radius:5px;
-    color:white;
-    font-size:12px;
-}
 </style>
 </head>
 
 <body>
 
+<!-- SIDEBAR -->
 <div class="sidebar">
-    <h2>Cumplimiento MC</h2>
+    <h2>Control MC</h2>
 
     <a onclick="showSection('inicio')">Inicio</a>
     <a onclick="showSection('actividades')">Actividades</a>
@@ -54,6 +158,7 @@ body {font-family: Arial; margin:0; background:#f4f6f9;}
     <a onclick="showSection('indicadores')">Indicadores</a>
 </div>
 
+<!-- MAIN -->
 <div class="main">
 
 <!-- INICIO -->
@@ -62,12 +167,12 @@ body {font-family: Arial; margin:0; background:#f4f6f9;}
 
     <div class="cards">
         <div class="card">
-            <h3>Actividades</h3>
+            <h3>Total Actividades</h3>
             <p id="total">0</p>
         </div>
 
         <div class="card">
-            <h3>Horas</h3>
+            <h3>Horas Invertidas</h3>
             <p id="horas">0</p>
         </div>
 
@@ -81,91 +186,93 @@ body {font-family: Arial; margin:0; background:#f4f6f9;}
 <!-- ACTIVIDADES -->
 <div id="actividades" class="section">
 
-    <h1>Actividades</h1>
+<h1>Gestión de Actividades</h1>
 
-    <form id="actividadForm">
-        <input id="titulo" placeholder="Título" required>
+<form id="actividadForm">
+    <input id="titulo" placeholder="Título de la actividad" required>
 
-        <select id="categoria">
-            <option>Seguridad</option>
-            <option>Infraestructura</option>
-            <option>Ciberseguridad</option>
-            <option>Auditorias</option>
-            <option>Otros</option>
-        </select>
+    <select id="categoria">
+        <option>Seguridad</option>
+        <option>Infraestructura</option>
+        <option>Ciberseguridad</option>
+        <option>Auditorías</option>
+        <option>Otros</option>
+    </select>
 
-        <input type="date" id="fecha" required>
-        <input type="time" id="inicio" required>
-        <input type="time" id="fin" required>
+    <input type="date" id="fecha" required>
 
-        <select id="estado">
-            <option>Pendiente</option>
-            <option>En proceso</option>
-            <option>Completada</option>
-        </select>
+    <input type="time" id="inicio" required>
+    <input type="time" id="fin" required>
 
-        <textarea id="observacion" placeholder="Observación"></textarea>
+    <select id="estado">
+        <option>Pendiente</option>
+        <option>En proceso</option>
+        <option>Completada</option>
+    </select>
 
-        <button type="submit">Guardar</button>
-    </form>
+    <textarea id="observacion" placeholder="Observaciones"></textarea>
 
-    <table border="1" width="100%" style="margin-top:15px;background:white;">
-        <thead>
-            <tr>
-                <th>Título</th>
-                <th>Categoría</th>
-                <th>Fecha</th>
-                <th>Horas</th>
-                <th>Estado</th>
-            </tr>
-        </thead>
-        <tbody id="tabla"></tbody>
-    </table>
+    <button>Guardar Actividad</button>
+</form>
+
+<table>
+    <thead>
+        <tr>
+            <th>Título</th>
+            <th>Categoría</th>
+            <th>Fecha</th>
+            <th>Horas</th>
+            <th>Estado</th>
+        </tr>
+    </thead>
+    <tbody id="tabla"></tbody>
+</table>
+
 </div>
 
 <!-- REPORTES -->
 <div id="reportes" class="section">
 
-    <h1>Reportes (Seguimiento)</h1>
+<h1>Gestión de Reportes</h1>
 
-    <form id="reporteForm">
-        <input id="r_titulo" placeholder="Título del reporte" required>
+<form id="reporteForm">
+    <input id="r_titulo" placeholder="Título del reporte" required>
 
-        <select id="r_tipo">
-            <option>Infraestructura</option>
-            <option>Seguridad</option>
-            <option>Incidente</option>
-            <option>Otros</option>
-        </select>
+    <select id="r_tipo">
+        <option>Infraestructura</option>
+        <option>Seguridad</option>
+        <option>Incidente</option>
+        <option>Otros</option>
+    </select>
 
-        <textarea id="r_desc" placeholder="Descripción"></textarea>
+    <textarea id="r_desc" placeholder="Descripción"></textarea>
 
-        <select id="r_estado">
-            <option>Abierto</option>
-            <option>En proceso</option>
-            <option>Cerrado</option>
-        </select>
+    <select id="r_estado">
+        <option>Abierto</option>
+        <option>En proceso</option>
+        <option>Cerrado</option>
+    </select>
 
-        <button>Crear Reporte</button>
-    </form>
+    <button>Crear Reporte</button>
+</form>
 
-    <table border="1" width="100%" style="margin-top:15px;background:white;">
-        <thead>
-            <tr>
-                <th>Título</th>
-                <th>Tipo</th>
-                <th>Estado</th>
-            </tr>
-        </thead>
-        <tbody id="tablaReportes"></tbody>
-    </table>
+<table>
+    <thead>
+        <tr>
+            <th>Título</th>
+            <th>Tipo</th>
+            <th>Estado</th>
+        </tr>
+    </thead>
+    <tbody id="tablaReportes"></tbody>
+</table>
 
 </div>
 
 <!-- INDICADORES -->
 <div id="indicadores" class="section">
     <h1>Indicadores</h1>
-    <p>Aquí luego metemos gráficas 📊</p>
+    <p style="font-size:18px;">Aquí luego agregamos gráficas y KPIs 📊</p>
 </div>
 
 </div>
@@ -177,12 +284,13 @@ let reportes = JSON.parse(localStorage.getItem("rep")) || [];
 
 /* NAV */
 function showSection(id){
-    document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+    document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
     document.getElementById(id).classList.add("active");
 }
 
 /* ACTIVIDADES */
 function render(){
+
     let tabla = document.getElementById("tabla");
     tabla.innerHTML = "";
 
@@ -190,6 +298,7 @@ function render(){
     let ok = 0;
 
     actividades.forEach((a,i)=>{
+
         horas += a.horas;
         if(a.estado==="Completada") ok++;
 
@@ -199,13 +308,7 @@ function render(){
             <td>${a.categoria}</td>
             <td>${a.fecha}</td>
             <td>${a.horas.toFixed(2)}</td>
-            <td>
-                <select onchange="cambiar(${i},this.value)">
-                    <option ${a.estado==="Pendiente"?"selected":""}>Pendiente</option>
-                    <option ${a.estado==="En proceso"?"selected":""}>En proceso</option>
-                    <option ${a.estado==="Completada"?"selected":""}>Completada</option>
-                </select>
-            </td>
+            <td>${a.estado}</td>
         </tr>`;
     });
 
@@ -215,11 +318,6 @@ function render(){
         actividades.length ? (ok/actividades.length*100).toFixed(0)+"%" : "0%";
 
     localStorage.setItem("act", JSON.stringify(actividades));
-}
-
-function cambiar(i,v){
-    actividades[i].estado=v;
-    render();
 }
 
 /* FORM ACTIVIDAD */
@@ -248,7 +346,7 @@ function renderRep(){
     let t = document.getElementById("tablaReportes");
     t.innerHTML = "";
 
-    reportes.forEach((r,i)=>{
+    reportes.forEach(r=>{
         t.innerHTML += `
         <tr>
             <td>${r.titulo}</td>
@@ -274,7 +372,6 @@ reporteForm.onsubmit = e=>{
     renderRep();
 };
 
-/* INIT */
 render();
 renderRep();
 
