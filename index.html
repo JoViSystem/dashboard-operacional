@@ -1,10 +1,194 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>Dashboard Operacional</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Operacional</title>
+<style>
+body {font-family: Arial, sans-serif; margin:0; background:#f4f6f9;}
+.sidebar {
+    width:220px; height:100vh; position:fixed;
+    background:#1f2937; color:white; padding:20px;
+}
+.sidebar h2 {margin-top:0;}
+.sidebar a {
+    display:block; color:white; text-decoration:none;
+    padding:10px 0;
+}
+.main {margin-left:240px; padding:20px;}
+.cards {display:flex; gap:20px; flex-wrap:wrap;}
+.card {
+    background:white; padding:20px; border-radius:10px;
+    box-shadow:0 2px 8px rgba(0,0,0,.1);
+    flex:1; min-width:180px;
+}
+form {
+    background:white; padding:20px; border-radius:10px;
+    margin-top:20px;
+}
+input, select, textarea {
+    width:100%; padding:10px; margin:8px 0;
+}
+button {
+    background:#2563eb; color:white;
+    border:none; padding:10px 20px;
+    border-radius:6px; cursor:pointer;
+}
+table {
+    width:100%; border-collapse:collapse;
+    margin-top:20px; background:white;
+}
+th, td {
+    border:1px solid #ddd; padding:10px;
+}
+th {background:#2563eb; color:white;}
+</style>
 </head>
 <body>
+
+<div class="sidebar">
+    <h2>Dashboard</h2>
+    <a href="#">Inicio</a>
+    <a href="#">Actividades</a>
+    <a href="#">Indicadores</a>
+    <a href="#">Reportes</a>
+</div>
+
+<div class="main">
     <h1>Dashboard Operacional</h1>
-    <p>Bienvenidos al sistema de indicadores.</p>
+
+    <div class="cards">
+        <div class="card">
+            <h3>Total Actividades</h3>
+            <p id="total">0</p>
+        </div>
+
+        <div class="card">
+            <h3>Horas Invertidas</h3>
+            <p id="horas">0</p>
+        </div>
+
+        <div class="card">
+            <h3>Cumplimiento</h3>
+            <p id="cumplimiento">0%</p>
+        </div>
+    </div>
+
+    <form id="actividadForm">
+        <h2>Registrar Actividad</h2>
+
+        <input type="text" id="titulo" placeholder="Título" required>
+
+        <select id="categoria">
+            <option>Seguridad</option>
+            <option>Brigadas</option>
+            <option>Infraestructura</option>
+            <option>Ciberseguridad</option>
+            <option>Otros</option>
+        </select>
+
+        <input type="date" id="fecha" required>
+
+        <input type="time" id="inicio" required>
+
+        <input type="time" id="fin" required>
+
+        <select id="estado">
+            <option>Completada</option>
+            <option>En proceso</option>
+            <option>Pendiente</option>
+        </select>
+
+        <textarea id="observacion" placeholder="Observaciones"></textarea>
+
+        <button type="submit">Guardar Actividad</button>
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Título</th>
+                <th>Categoría</th>
+                <th>Fecha</th>
+                <th>Horas</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+
+        <tbody id="tabla"></tbody>
+    </table>
+</div>
+
+<script>
+let actividades = JSON.parse(localStorage.getItem("actividades")) || [];
+
+function actualizar() {
+    let tabla = document.getElementById("tabla");
+    tabla.innerHTML = "";
+
+    let horasTotales = 0;
+    let completadas = 0;
+
+    actividades.forEach(a => {
+        tabla.innerHTML += `
+            <tr>
+                <td>${a.titulo}</td>
+                <td>${a.categoria}</td>
+                <td>${a.fecha}</td>
+                <td>${a.horas}</td>
+                <td>${a.estado}</td>
+            </tr>
+        `;
+
+        horasTotales += a.horas;
+
+        if(a.estado === "Completada"){
+            completadas++;
+        }
+    });
+
+    document.getElementById("total").textContent = actividades.length;
+    document.getElementById("horas").textContent = horasTotales.toFixed(2);
+
+    let porcentaje = actividades.length > 0
+        ? (completadas / actividades.length) * 100
+        : 0;
+
+    document.getElementById("cumplimiento").textContent =
+        porcentaje.toFixed(0) + "%";
+
+    localStorage.setItem("actividades", JSON.stringify(actividades));
+}
+
+document.getElementById("actividadForm")
+.addEventListener("submit", function(e){
+    e.preventDefault();
+
+    let inicio = document.getElementById("inicio").value;
+    let fin = document.getElementById("fin").value;
+
+    let hi = inicio.split(":");
+    let hf = fin.split(":");
+
+    let horas =
+        (parseInt(hf[0]) + parseInt(hf[1])/60) -
+        (parseInt(hi[0]) + parseInt(hi[1])/60);
+
+    actividades.push({
+        titulo: titulo.value,
+        categoria: categoria.value,
+        fecha: fecha.value,
+        horas: horas,
+        estado: estado.value,
+        observacion: observacion.value
+    });
+
+    this.reset();
+    actualizar();
+});
+
+actualizar();
+</script>
+
 </body>
 </html>
