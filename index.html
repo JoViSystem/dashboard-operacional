@@ -289,35 +289,62 @@ function showSection(id){
     document.getElementById(id).classList.add("active");
 }
 
-/* ACTIVIDADES */
-document.getElementById("actividadForm").onsubmit = function(e){
-    e.preventDefault();
+/* ===== ACTIVIDADES ===== */
 
-    let titulo = document.getElementById("titulo").value;
-    let categoria = document.getElementById("categoria").value;
-    let fecha = document.getElementById("fecha").value;
-    let inicio = document.getElementById("inicio").value;
-    let fin = document.getElementById("fin").value;
-    let estado = document.getElementById("estado").value;
+document.addEventListener("DOMContentLoaded", function(){
 
-    let h1 = inicio.split(":");
-    let h2 = fin.split(":");
+    const form = document.getElementById("actividadForm");
 
-    let horas = (parseInt(h2[0]) + h2[1]/60) - (parseInt(h1[0]) + h1[1]/60);
+    form.addEventListener("submit", function(e){
+        e.preventDefault();
 
-    actividades.push({
-        titulo,
-        categoria,
-        fecha,
-        horas,
-        estado
+        const titulo = document.getElementById("titulo").value;
+        const categoria = document.getElementById("categoria").value;
+        const fecha = document.getElementById("fecha").value;
+        const inicio = document.getElementById("inicio").value;
+        const fin = document.getElementById("fin").value;
+        const estado = document.getElementById("estado").value;
+
+        let h1 = inicio.split(":");
+        let h2 = fin.split(":");
+
+        let horas = (parseInt(h2[0]) + h2[1]/60) - (parseInt(h1[0]) + h1[1]/60);
+
+        actividades.push({
+            titulo,
+            categoria,
+            fecha,
+            horas,
+            estado
+        });
+
+        localStorage.setItem("act", JSON.stringify(actividades));
+
+        form.reset();
+        render();
     });
 
-    localStorage.setItem("act", JSON.stringify(actividades));
+    const formRep = document.getElementById("reporteForm");
 
-    this.reset();
+    formRep.addEventListener("submit", function(e){
+        e.preventDefault();
+
+        reportes.push({
+            titulo: document.getElementById("r_titulo").value,
+            tipo: document.getElementById("r_tipo").value,
+            desc: document.getElementById("r_desc").value,
+            estado: document.getElementById("r_estado").value
+        });
+
+        localStorage.setItem("rep", JSON.stringify(reportes));
+
+        formRep.reset();
+        renderRep();
+    });
+
     render();
-};
+    renderRep();
+});
 
 /* MOSTRAR ACTIVIDADES */
 function render(){
@@ -352,27 +379,6 @@ function render(){
 }
 
 /* REPORTES */
-document.getElementById("reporteForm").onsubmit = function(e){
-    e.preventDefault();
-
-    let titulo = document.getElementById("r_titulo").value;
-    let tipo = document.getElementById("r_tipo").value;
-    let desc = document.getElementById("r_desc").value;
-    let estado = document.getElementById("r_estado").value;
-
-    reportes.push({
-        titulo,
-        tipo,
-        desc,
-        estado
-    });
-
-    localStorage.setItem("rep", JSON.stringify(reportes));
-
-    this.reset();
-    renderRep();
-};
-
 function renderRep(){
 
     let t = document.getElementById("tablaReportes");
