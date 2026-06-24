@@ -3,68 +3,42 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Monitoring, Compliance and Continuous Improvement System</title>
+<title>Compliance & Continuous Improvement System</title>
 
 <style>
-body {font-family: Arial, sans-serif; margin:0; background:#f4f6f9;}
+body {font-family: Arial; margin:0; background:#f4f6f9;}
 
 .sidebar {
     width:220px; height:100vh; position:fixed;
     background:#1f2937; color:white; padding:20px;
 }
 
-.sidebar h2 {margin-top:0;}
-
 .sidebar a {
     display:block; color:white; text-decoration:none;
-    padding:10px 0;
+    padding:10px 10px;
+    cursor:pointer;
 }
 
-.main {margin-left:240px; padding:20px;}
-
-.cards {
-    display:flex; gap:20px; flex-wrap:wrap;
+.main {
+    margin-left:240px; padding:20px;
 }
+
+.section {display:none;}
+.active {display:block;}
+
+.cards {display:flex; gap:20px;}
 
 .card {
-    background:white; padding:20px; border-radius:10px;
-    box-shadow:0 2px 8px rgba(0,0,0,.1);
-    flex:1; min-width:180px;
+    background:white; padding:15px;
+    border-radius:10px; flex:1;
 }
 
-form {
-    background:white; padding:20px; border-radius:10px;
-    margin-top:20px;
-}
-
-input, select, textarea {
-    width:100%; padding:10px; margin:8px 0;
-}
-
-button {
-    background:#2563eb; color:white;
-    border:none; padding:10px 20px;
-    border-radius:6px; cursor:pointer;
-}
-
-table {
-    width:100%; border-collapse:collapse;
-    margin-top:20px; background:white;
-}
-
-th, td {
-    border:1px solid #ddd; padding:10px;
-}
-
-th {
-    background:#2563eb; color:white;
-}
-
-/* Colores de estado */
-.estado {
-    color:white;
-    padding:5px;
+/* estados */
+.badge {
+    padding:5px 8px;
     border-radius:5px;
+    color:white;
+    font-size:12px;
 }
 </style>
 </head>
@@ -72,70 +46,70 @@ th {
 <body>
 
 <div class="sidebar">
-    <h2>Cumplimiento y MC</h2>
-    <a href="#">Inicio</a>
-    <a href="#">Actividades</a>
-    <a href="#">Indicadores</a>
-    <a href="#">Reportes</a>
+    <h2>Cumplimiento MC</h2>
+
+    <a onclick="showSection('inicio')">Inicio</a>
+    <a onclick="showSection('actividades')">Actividades</a>
+    <a onclick="showSection('reportes')">Reportes</a>
+    <a onclick="showSection('indicadores')">Indicadores</a>
 </div>
 
 <div class="main">
 
-    <h1>Monitoring, Compliance and Continuous Improvement System</h1>
+<!-- INICIO -->
+<div id="inicio" class="section active">
+    <h1>Dashboard General</h1>
 
-    <!-- CARDS -->
     <div class="cards">
         <div class="card">
-            <h3>Total Actividades</h3>
+            <h3>Actividades</h3>
             <p id="total">0</p>
         </div>
 
         <div class="card">
-            <h3>Horas Invertidas</h3>
+            <h3>Horas</h3>
             <p id="horas">0</p>
         </div>
 
         <div class="card">
-            <h3>Nivel de Cumplimiento</h3>
+            <h3>Cumplimiento</h3>
             <p id="cumplimiento">0%</p>
         </div>
     </div>
+</div>
 
-    <!-- FORM -->
+<!-- ACTIVIDADES -->
+<div id="actividades" class="section">
+
+    <h1>Actividades</h1>
+
     <form id="actividadForm">
-        <h2>Registrar Actividad</h2>
-
-        <input type="text" id="titulo" placeholder="Título" required>
+        <input id="titulo" placeholder="Título" required>
 
         <select id="categoria">
             <option>Seguridad</option>
-            <option>Brigadas</option>
             <option>Infraestructura</option>
             <option>Ciberseguridad</option>
-            <option>Inspecciones</option>
             <option>Auditorias</option>
             <option>Otros</option>
         </select>
 
         <input type="date" id="fecha" required>
-
         <input type="time" id="inicio" required>
-
         <input type="time" id="fin" required>
 
         <select id="estado">
-            <option>Completada</option>
-            <option>En proceso</option>
             <option>Pendiente</option>
+            <option>En proceso</option>
+            <option>Completada</option>
         </select>
 
-        <textarea id="observacion" placeholder="Observaciones"></textarea>
+        <textarea id="observacion" placeholder="Observación"></textarea>
 
-        <button type="submit">Guardar Actividad</button>
+        <button type="submit">Guardar</button>
     </form>
 
-    <!-- TABLE -->
-    <table>
+    <table border="1" width="100%" style="margin-top:15px;background:white;">
         <thead>
             <tr>
                 <th>Título</th>
@@ -147,101 +121,163 @@ th {
         </thead>
         <tbody id="tabla"></tbody>
     </table>
+</div>
+
+<!-- REPORTES -->
+<div id="reportes" class="section">
+
+    <h1>Reportes (Seguimiento)</h1>
+
+    <form id="reporteForm">
+        <input id="r_titulo" placeholder="Título del reporte" required>
+
+        <select id="r_tipo">
+            <option>Infraestructura</option>
+            <option>Seguridad</option>
+            <option>Incidente</option>
+            <option>Otros</option>
+        </select>
+
+        <textarea id="r_desc" placeholder="Descripción"></textarea>
+
+        <select id="r_estado">
+            <option>Abierto</option>
+            <option>En proceso</option>
+            <option>Cerrado</option>
+        </select>
+
+        <button>Crear Reporte</button>
+    </form>
+
+    <table border="1" width="100%" style="margin-top:15px;background:white;">
+        <thead>
+            <tr>
+                <th>Título</th>
+                <th>Tipo</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody id="tablaReportes"></tbody>
+    </table>
+
+</div>
+
+<!-- INDICADORES -->
+<div id="indicadores" class="section">
+    <h1>Indicadores</h1>
+    <p>Aquí luego metemos gráficas 📊</p>
+</div>
 
 </div>
 
 <script>
-let actividades = JSON.parse(localStorage.getItem("actividades")) || [];
 
-/* COLOR SEGÚN ESTADO */
-function getColor(estado){
-    if(estado === "Completada") return "#16a34a"; // verde
-    if(estado === "En proceso") return "#f59e0b"; // amarillo
-    return "#dc2626"; // rojo
+let actividades = JSON.parse(localStorage.getItem("act")) || [];
+let reportes = JSON.parse(localStorage.getItem("rep")) || [];
+
+/* NAV */
+function showSection(id){
+    document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
 }
 
-/* ACTUALIZAR UI */
-function actualizar() {
-
+/* ACTIVIDADES */
+function render(){
     let tabla = document.getElementById("tabla");
     tabla.innerHTML = "";
 
-    let horasTotales = 0;
-    let completadas = 0;
+    let horas = 0;
+    let ok = 0;
 
-    actividades.forEach((a, index) => {
-
-        if(a.estado === "Completada") completadas++;
-
-        horasTotales += a.horas;
+    actividades.forEach((a,i)=>{
+        horas += a.horas;
+        if(a.estado==="Completada") ok++;
 
         tabla.innerHTML += `
-            <tr>
-                <td>${a.titulo}</td>
-                <td>${a.categoria}</td>
-                <td>${a.fecha}</td>
-                <td>${a.horas.toFixed(2)}</td>
-
-                <td>
-                    <select onchange="cambiarEstado(${index}, this.value)"
-                        style="background:${getColor(a.estado)}; color:white; border:none; padding:6px; border-radius:5px;">
-                        <option ${a.estado === "Pendiente" ? "selected" : ""}>Pendiente</option>
-                        <option ${a.estado === "En proceso" ? "selected" : ""}>En proceso</option>
-                        <option ${a.estado === "Completada" ? "selected" : ""}>Completada</option>
-                    </select>
-                </td>
-            </tr>
-        `;
+        <tr>
+            <td>${a.titulo}</td>
+            <td>${a.categoria}</td>
+            <td>${a.fecha}</td>
+            <td>${a.horas.toFixed(2)}</td>
+            <td>
+                <select onchange="cambiar(${i},this.value)">
+                    <option ${a.estado==="Pendiente"?"selected":""}>Pendiente</option>
+                    <option ${a.estado==="En proceso"?"selected":""}>En proceso</option>
+                    <option ${a.estado==="Completada"?"selected":""}>Completada</option>
+                </select>
+            </td>
+        </tr>`;
     });
 
-    document.getElementById("total").textContent = actividades.length;
-    document.getElementById("horas").textContent = horasTotales.toFixed(2);
+    document.getElementById("total").innerText = actividades.length;
+    document.getElementById("horas").innerText = horas.toFixed(2);
+    document.getElementById("cumplimiento").innerText =
+        actividades.length ? (ok/actividades.length*100).toFixed(0)+"%" : "0%";
 
-    let porcentaje = actividades.length > 0
-        ? (completadas / actividades.length) * 100
-        : 0;
-
-    document.getElementById("cumplimiento").textContent =
-        porcentaje.toFixed(0) + "%";
-
-    localStorage.setItem("actividades", JSON.stringify(actividades));
+    localStorage.setItem("act", JSON.stringify(actividades));
 }
 
-/* CAMBIAR ESTADO */
-function cambiarEstado(index, nuevoEstado){
-    actividades[index].estado = nuevoEstado;
-    actualizar();
+function cambiar(i,v){
+    actividades[i].estado=v;
+    render();
 }
 
-/* GUARDAR ACTIVIDAD */
-document.getElementById("actividadForm")
-.addEventListener("submit", function(e){
+/* FORM ACTIVIDAD */
+actividadForm.onsubmit = e=>{
     e.preventDefault();
 
-    let inicio = document.getElementById("inicio").value;
-    let fin = document.getElementById("fin").value;
+    let h1 = inicio.value.split(":");
+    let h2 = fin.value.split(":");
 
-    let hi = inicio.split(":");
-    let hf = fin.split(":");
-
-    let horas =
-        (parseInt(hf[0]) + parseInt(hf[1])/60) -
-        (parseInt(hi[0]) + parseInt(hi[1])/60);
+    let horas = (parseInt(h2[0])+h2[1]/60)-(parseInt(h1[0])+h1[1]/60);
 
     actividades.push({
         titulo: titulo.value,
         categoria: categoria.value,
         fecha: fecha.value,
         horas: horas,
-        estado: estado.value,
-        observacion: observacion.value
+        estado: estado.value
     });
 
-    this.reset();
-    actualizar();
-});
+    actividadForm.reset();
+    render();
+};
 
-actualizar();
+/* REPORTES */
+function renderRep(){
+    let t = document.getElementById("tablaReportes");
+    t.innerHTML = "";
+
+    reportes.forEach((r,i)=>{
+        t.innerHTML += `
+        <tr>
+            <td>${r.titulo}</td>
+            <td>${r.tipo}</td>
+            <td>${r.estado}</td>
+        </tr>`;
+    });
+
+    localStorage.setItem("rep", JSON.stringify(reportes));
+}
+
+reporteForm.onsubmit = e=>{
+    e.preventDefault();
+
+    reportes.push({
+        titulo: r_titulo.value,
+        tipo: r_tipo.value,
+        desc: r_desc.value,
+        estado: r_estado.value
+    });
+
+    reporteForm.reset();
+    renderRep();
+};
+
+/* INIT */
+render();
+renderRep();
+
 </script>
 
 </body>
