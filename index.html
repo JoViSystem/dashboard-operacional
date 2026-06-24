@@ -182,61 +182,54 @@ td {
         </div>
     </div>
 </div>
-<!-- TODO TU HTML ARRIBA -->
 
 <!-- ACTIVIDADES -->
 <div id="actividades" class="section">
-    ...
+
+<h1>Gestión de Actividades</h1>
+
+<form id="actividadForm">
+    <input id="titulo" placeholder="Título de la actividad" required>
+
+    <select id="categoria">
+        <option>Seguridad</option>
+        <option>Infraestructura</option>
+        <option>Ciberseguridad</option>
+        <option>Inspecciones</option>
+        <option>Auditorías</option>
+        <option>Otros</option>
+    </select>
+
+    <input type="date" id="fecha" required>
+
+    <input type="time" id="inicio" required>
+    <input type="time" id="fin" required>
+
+    <select id="estado">
+        <option>Pendiente</option>
+        <option>En proceso</option>
+        <option>Completada</option>
+    </select>
+
+    <textarea id="observacion" placeholder="Observaciones"></textarea>
+
+    <button>Guardar Actividad</button>
+</form>
+
+<table>
+    <thead>
+        <tr>
+            <th>Título</th>
+            <th>Categoría</th>
+            <th>Fecha</th>
+            <th>Horas</th>
+            <th>Estado</th>
+        </tr>
+    </thead>
+    <tbody id="tabla"></tbody>
+</table>
+
 </div>
-<script>
-let actividades = JSON.parse(localStorage.getItem("act")) || [];
-
-document.getElementById("actividadForm").addEventListener("submit", function(e) {
-    e.preventDefault();
-
-    let actividad = {
-        titulo: document.getElementById("titulo").value,
-        categoria: document.getElementById("categoria").value,
-        fecha: document.getElementById("fecha").value,
-        inicio: document.getElementById("inicio").value,
-        fin: document.getElementById("fin").value,
-        estado: document.getElementById("estado").value,
-        observacion: document.getElementById("observacion").value
-    };
-
-    actividades.push(actividad);
-
-    localStorage.setItem("act", JSON.stringify(actividades));
-
-    renderTabla();
-
-    document.getElementById("actividadForm").reset();
-});
-
-function renderTabla() {
-    let tbody = document.getElementById("tabla");
-    tbody.innerHTML = "";
-
-    actividades.forEach((act) => {
-        let horas = act.inicio + " - " + act.fin;
-
-        tbody.innerHTML += `
-            <tr>
-                <td>${act.titulo}</td>
-                <td>${act.categoria}</td>
-                <td>${act.fecha}</td>
-                <td>${horas}</td>
-                <td>${act.estado}</td>
-            </tr>
-        `;
-    });
-}
-
-renderTabla();
-</script>
-
-</body>
-</html>
 
 <!-- REPORTES -->
 <div id="reportes" class="section">
@@ -296,64 +289,7 @@ function showSection(id){
     document.getElementById(id).classList.add("active");
 }
 
-/* ===== ACTIVIDADES ===== */
-
-document.addEventListener("DOMContentLoaded", function(){
-
-    const form = document.getElementById("actividadForm");
-
-    form.addEventListener("submit", function(e){
-        e.preventDefault();
-
-        const titulo = document.getElementById("titulo").value;
-        const categoria = document.getElementById("categoria").value;
-        const fecha = document.getElementById("fecha").value;
-        const inicio = document.getElementById("inicio").value;
-        const fin = document.getElementById("fin").value;
-        const estado = document.getElementById("estado").value;
-
-        let h1 = inicio.split(":");
-        let h2 = fin.split(":");
-
-        let horas = (parseInt(h2[0]) + h2[1]/60) - (parseInt(h1[0]) + h1[1]/60);
-
-        actividades.push({
-            titulo,
-            categoria,
-            fecha,
-            horas,
-            estado
-        });
-
-        localStorage.setItem("act", JSON.stringify(actividades));
-
-        form.reset();
-        render();
-    });
-
-    const formRep = document.getElementById("reporteForm");
-
-    formRep.addEventListener("submit", function(e){
-        e.preventDefault();
-
-        reportes.push({
-            titulo: document.getElementById("r_titulo").value,
-            tipo: document.getElementById("r_tipo").value,
-            desc: document.getElementById("r_desc").value,
-            estado: document.getElementById("r_estado").value
-        });
-
-        localStorage.setItem("rep", JSON.stringify(reportes));
-
-        formRep.reset();
-        renderRep();
-    });
-
-    render();
-    renderRep();
-});
-
-/* MOSTRAR ACTIVIDADES */
+/* ACTIVIDADES */
 function render(){
 
     let tabla = document.getElementById("tabla");
@@ -362,11 +298,10 @@ function render(){
     let horas = 0;
     let ok = 0;
 
-    actividades.forEach(a=>{
+    actividades.forEach((a,i)=>{
 
         horas += a.horas;
-
-        if(a.estado === "Completada") ok++;
+        if(a.estado==="Completada") ok++;
 
         tabla.innerHTML += `
         <tr>
@@ -380,14 +315,35 @@ function render(){
 
     document.getElementById("total").innerText = actividades.length;
     document.getElementById("horas").innerText = horas.toFixed(2);
+    document.getElementById("cumplimiento").innerText =
+        actividades.length ? (ok/actividades.length*100).toFixed(0)+"%" : "0%";
 
-    let porcentaje = actividades.length ? (ok/actividades.length)*100 : 0;
-    document.getElementById("cumplimiento").innerText = porcentaje.toFixed(0) + "%";
+    localStorage.setItem("act", JSON.stringify(actividades));
 }
+
+/* FORM ACTIVIDAD */
+actividadForm.onsubmit = e=>{
+    e.preventDefault();
+
+    let h1 = inicio.value.split(":");
+    let h2 = fin.value.split(":");
+
+    let horas = (parseInt(h2[0])+h2[1]/60)-(parseInt(h1[0])+h1[1]/60);
+
+    actividades.push({
+        titulo: titulo.value,
+        categoria: categoria.value,
+        fecha: fecha.value,
+        horas: horas,
+        estado: estado.value
+    });
+
+    actividadForm.reset();
+    render();
+};
 
 /* REPORTES */
 function renderRep(){
-
     let t = document.getElementById("tablaReportes");
     t.innerHTML = "";
 
@@ -399,12 +355,28 @@ function renderRep(){
             <td>${r.estado}</td>
         </tr>`;
     });
+
+    localStorage.setItem("rep", JSON.stringify(reportes));
 }
 
-/* INICIO */
+reporteForm.onsubmit = e=>{
+    e.preventDefault();
+
+    reportes.push({
+        titulo: r_titulo.value,
+        tipo: r_tipo.value,
+        desc: r_desc.value,
+        estado: r_estado.value
+    });
+
+    reporteForm.reset();
+    renderRep();
+};
+
 render();
 renderRep();
 
 </script>
+
 </body>
 </html>
