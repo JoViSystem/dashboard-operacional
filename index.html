@@ -36,6 +36,7 @@ body {
     font-size:16px;
     border-radius:6px;
     margin-bottom:5px;
+    cursor: pointer;
 }
 
 .sidebar a:hover {
@@ -99,6 +100,7 @@ input, select, textarea {
     font-size:16px;
     border-radius:8px;
     border:1px solid #d1d5db;
+    box-sizing: border-box;
 }
 
 button {
@@ -148,7 +150,6 @@ td {
 
 <body>
 
-<!-- SIDEBAR -->
 <div class="sidebar">
     <h2>Control MC</h2>
 
@@ -158,10 +159,8 @@ td {
     <a onclick="showSection('indicadores')">Indicadores</a>
 </div>
 
-<!-- MAIN -->
 <div class="main">
 
-<!-- INICIO -->
 <div id="inicio" class="section active">
     <h1>Dashboard General</h1>
 
@@ -183,7 +182,6 @@ td {
     </div>
 </div>
 
-<!-- ACTIVIDADES -->
 <div id="actividades" class="section">
 
 <h1>Gestión de Actividades</h1>
@@ -202,8 +200,11 @@ td {
 
     <input type="date" id="fecha" required>
 
-    <input type="time" id="inicio" required>
-    <input type="time" id="fin" required>
+    <label for="hora_inicio">Hora Inicio:</label>
+    <input type="time" id="hora_inicio" required>
+    
+    <label for="hora_fin">Hora Fin:</label>
+    <input type="time" id="hora_fin" required>
 
     <select id="estado">
         <option>Pendiente</option>
@@ -213,7 +214,7 @@ td {
 
     <textarea id="observacion" placeholder="Observaciones"></textarea>
 
-    <button>Guardar Actividad</button>
+    <button type="submit">Guardar Actividad</button>
 </form>
 
 <table>
@@ -231,7 +232,6 @@ td {
 
 </div>
 
-<!-- REPORTES -->
 <div id="reportes" class="section">
 
 <h1>Gestión de Reportes</h1>
@@ -254,7 +254,7 @@ td {
         <option>Cerrado</option>
     </select>
 
-    <button>Crear Reporte</button>
+    <button type="submit">Crear Reporte</button>
 </form>
 
 <table>
@@ -270,7 +270,6 @@ td {
 
 </div>
 
-<!-- INDICADORES -->
 <div id="indicadores" class="section">
     <h1>Indicadores</h1>
     <p style="font-size:18px;">Aquí luego agregamos gráficas y KPIs 📊</p>
@@ -325,10 +324,17 @@ function render(){
 actividadForm.onsubmit = e=>{
     e.preventDefault();
 
-    let h1 = inicio.value.split(":");
-    let h2 = fin.value.split(":");
+    // Se usan los nuevos IDs corregidos
+    let h1 = hora_inicio.value.split(":");
+    let h2 = hora_fin.value.split(":");
 
     let horas = (parseInt(h2[0])+h2[1]/60)-(parseInt(h1[0])+h1[1]/60);
+    
+    // Validar por si ponen una hora final menor a la inicial
+    if (horas < 0) {
+        alert("La hora de fin no puede ser menor que la hora de inicio");
+        return;
+    }
 
     actividades.push({
         titulo: titulo.value,
