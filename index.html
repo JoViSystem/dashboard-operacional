@@ -327,6 +327,16 @@ table select {
     cursor: pointer;
 }
 
+/* Select para cambiar el responsable en la tabla de forma discreta */
+.select-responsable-tabla {
+    background: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    color: var(--text-dark) !important;
+    font-weight: 600 !important;
+    border-radius: 6px !important;
+    padding: 4px 8px !important;
+}
+
 .btn-delete {
     background: #fef2f2;
     color: var(--sec-red);
@@ -406,7 +416,7 @@ table select {
 <div id="app-content">
 
     <div class="sidebar">
-        <h2>⚙️ Cumplimiento Control</h2>
+        <h2>⚙️ Control MC</h2>
         <div class="user-info" id="user-display">Usuario: En línea</div>
 
         <a id="menu-inicio" onclick="showSection('inicio')" class="active-menu">📊 Inicio (Dashboard)</a>
@@ -609,7 +619,7 @@ table select {
                         <input type="date" id="asoc_fecha" required>
                     </div>
                     <div>
-                        <label>🎯 Asignar Responsable (Opcional):</label>
+                        <label>🎯 Asignar Responsable Inicial:</label>
                         <select id="asoc_asignar_a">
                             <option value="">-- Mismo (Asignación propia) --</option>
                             <option value="jgarcia">Joan Garcia</option>
@@ -625,7 +635,7 @@ table select {
             <table>
                 <thead>
                     <tr>
-                        <th>Asignado A / Responsable</th>
+                        <th>Responsable Asignado</th>
                         <th>Nombre del Asociado</th>
                         <th>Fecha</th>
                         <th>Estatus de Negocio</th>
@@ -850,7 +860,7 @@ reporteForm.onsubmit = e => {
     reporteForm.reset(); renderRep();
 };
 
-/* ASOCIADOS DE NEGOCIOS CON ASIGNACIÓN */
+/* ASOCIADOS DE NEGOCIOS CON WORKFLOW/REASIGNACIÓN EN VIVO */
 function renderAsociados() {
     let t = document.getElementById("tablaAsociados");
     t.innerHTML = "";
@@ -858,6 +868,8 @@ function renderAsociados() {
 
     asociados.forEach((asoc, i) => {
         if (!asoc.usuario) asoc.usuario = "DCumplimiento";
+        
+        // El Administrador ve todo, los empleados ven solo lo que TIENEN ASIGNADO actualmente
         if (filtro !== "todos" && asoc.usuario !== filtro) return;
 
         let claseEst = "";
@@ -866,16 +878,23 @@ function renderAsociados() {
         if(asoc.estatus === "Listo para enviar") claseEst = "badge-azul";
         if(asoc.estatus === "Enviado") claseEst = "badge-verde";
 
-        let deshabilitarSelect = (usuarioActivo.rol !== "admin" && asoc.usuario !== usuarioActivo.username) ? "disabled" : "";
-        let nombreDisplay = USUARIOS_VALIDOS[asoc.usuario] ? USUARIOS_VALIDOS[asoc.usuario].nombre : "Desconocido";
+        // Cualquiera puede reasignar si es dueño actual del registro o es admin
+        let deshabilitarCampos = (usuarioActivo.rol !== "admin" && asoc.usuario !== usuarioActivo.username) ? "disabled" : "";
 
         t.innerHTML += `
         <tr>
-            <td style="font-weight:600;">👤 ${nombreDisplay}</td>
+            <td>
+                <select class="select-responsable-tabla" onchange="reasignarAsociado(${i}, this.value)" ${deshabilitarCampos}>
+                    <option value="jgarcia" ${asoc.usuario === "jgarcia" ? "selected" : ""}>👤 Joan Garcia</option>
+                    <option value="jhilario" ${asoc.usuario === "jhilario" ? "selected" : ""}>👤 Jhoan Hilario</option>
+                    <option value="vtorres" ${asoc.usuario === "vtorres" ? "selected" : ""}>👤 Victor Torres</option>
+                    <option value="DCumplimiento" ${asoc.usuario === "DCumplimiento" ? "selected" : ""}>👤 Super Admin</option>
+                </select>
+            </td>
             <td><strong>${asoc.nombre}</strong></td>
             <td>📅 ${asoc.fecha}</td>
             <td>
-                <select class="${claseEst}" onchange="cambiarEstadoAsociado(${i}, this.value)" ${deshabilitarSelect}>
+                <select class="${claseEst}" onchange="cambiarEstadoAsociado(${i}, this.value)" ${deshabilitarCampos}>
                     <option value="En depuración" ${asoc.estatus === "En depuración" ? "selected" : ""}>🔍 En depuración</option>
                     <option value="En revisión y firma" ${asoc.estatus === "En revisión y firma" ? "selected" : ""}>✍️ En revisión y firma</option>
                     <option value="Listo para enviar" ${asoc.estatus === "Listo para enviar" ? "selected" : ""}>📦 Listo para enviar</option>
@@ -888,7 +907,17 @@ function renderAsociados() {
     localStorage.setItem("asoc", JSON.stringify(asociados));
 }
 
-function cambiarEstadoAsociado(index, nuevoEst) { asociados[index].estatus = nuevoEst; renderAsociados(); }
+function cambiarEstadoAsociado(index, nuevoEst) { 
+    asociados[index].estatus = nuevoEst; 
+    renderAsociados(); 
+}
+
+function reasignarAsociado(index, nuevoResponsable) {
+    asociados[index].usuario = nuevoResponsable;
+    alert(`Asociado reasignado con éxito a: ${USUARIOS_VALIDOS[nuevoResponsable].nombre}`);
+    renderAsociados(); // Se refresca la tabla. Si el empleado actual ya no es el dueño, desaparecerá de su vista filtrada.
+}
+
 function eliminarAsociado(index) { if(confirm("¿Eliminar asociado?")) { asociados.splice(index, 1); renderAsociados(); } }
 
 asociadoForm.onsubmit = e => {
