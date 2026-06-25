@@ -233,6 +233,36 @@ h2.section-title {
     border: 1px solid #cbd5e1;
 }
 
+/* SABÍAS QUE */
+.sabias-que-container {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    color: #f8fafc;
+    padding: 24px 28px;
+    border-radius: 14px;
+    margin-top: 35px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    border-left: 6px solid var(--sec-yellow);
+    position: relative;
+    overflow: hidden;
+}
+.sabias-que-container h4 {
+    margin: 0 0 8px 0;
+    color: var(--sec-yellow);
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.sabias-que-container p {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.5;
+    font-weight: 400;
+    color: #cbd5e1;
+}
+
 /* BOTONES DE EXPORTACIÓN */
 .export-bar {
     display: flex;
@@ -485,7 +515,7 @@ table select {
 
 /* ESTILOS EXCLUSIVOS PARA IMPRESIÓN / REPORTE PDF */
 @media print {
-    .sidebar, form, .admin-filter, .calendar-filter-box, .export-bar, .btn-export-pdf, th:nth-last-child(1), td:nth-last-child(1) {
+    .sidebar, form, .admin-filter, .calendar-filter-box, .export-bar, .btn-export-pdf, .sabias-que-container, th:nth-last-child(1), td:nth-last-child(1) {
         display: none !important;
     }
     .main {
@@ -559,6 +589,12 @@ table select {
                     <h3>Nivel de Cumplimiento</h3>
                     <p id="cumplimiento">0%</p>
                 </div>
+            </div>
+
+            <!-- SECCIÓN VOLVILDA A AGREGAR: SABÍAS QUE -->
+            <div class="sabias-que-container">
+                <h4>💡 ¿Sabías qué? - Cultura de Seguridad</h4>
+                <p id="sabias-que-texto">Cargando dato de concientización...</p>
             </div>
 
             <button class="btn-export-pdf" style="margin-top:30px;" onclick="window.print()">📄 Exportar Reporte Ejecutivo del Día (PDF)</button>
@@ -679,19 +715,28 @@ table select {
             </table>
         </div>
 
-        <!-- PIZARRA DE ACCIDENTABILIDAD (Totalmente independiente, sin replicar en Dashboard de Inicio) -->
+        <!-- PIZARRA DE ACCIDENTABILIDAD (Totalmente independiente por cada una de las 3 Empresas) -->
         <div id="accidentabilidad" class="section">
             <h1>📊 Pizarra de Estadísticas de Accidentabilidad</h1>
-            <p style="color: #64748b; margin-top:-10px;">Control aislado y manual de horas hombre trabajadas según la empresa correspondiente.</p>
+            <p style="color: #64748b; margin-top:-10px;">Control aislado y manual de horas hombre trabajadas por entidad jurídica.</p>
             
             <form id="accidentabilidadForm" onsubmit="guardarDatosAccidentabilidad(event)">
+                <div style="background:#f8fafc; padding:16px; border-radius:10px; border:1px solid #cbd5e1; margin-bottom:20px;">
+                    <label style="font-weight:bold; color:var(--accent-blue); font-size:15px;">🏢 Seleccionar Empresa para Carga de Datos:</label>
+                    <select id="acc_empresa_selector" onchange="cargarEmpresaAccidentabilidad(this.value)" style="margin-top:8px; font-weight:bold; border-color:var(--accent-blue);">
+                        <option value="notions">Notions Dominicana</option>
+                        <option value="now">Now Logistics</option>
+                        <option value="gtg">GTG</option>
+                    </select>
+                </div>
+
                 <div class="form-group-row">
                     <div>
                         <label>📅 Actualizado Hasta la Fecha</label>
                         <input type="date" id="acc_fecha_actualizacion" required>
                     </div>
                     <div>
-                        <label>🔢 Días Transcurridos en el Año Actual</label>
+                        <label>🔢 Días Transcurridos sin Accidentes (Año Actual)</label>
                         <input type="number" id="acc_input_dias" placeholder="Ej: 66" min="0" oninput="calcularHorasEnCaliente()" required>
                     </div>
                 </div>
@@ -715,7 +760,7 @@ table select {
                         <input type="text" id="acc_preview_horas" value="0 hrs" disabled style="background:#e2e8f0; font-weight:bold; color:var(--accent-blue);">
                     </div>
                 </div>
-                <button type="submit" style="background:var(--sidebar-bg);">💾 Guardar y Actualizar Pizarra de Control</button>
+                <button type="submit" style="background:var(--sidebar-bg); width:100%;">💾 Guardar y Actualizar Pizarra (<span id="txt-btn-empresa">Notions Dominicana</span>)</button>
             </form>
         </div>
 
@@ -866,19 +911,26 @@ const USUARIOS_VALIDOS = {
     "vtorres": { clave: "1234", rol: "supervisor", nombre: "Victor Torres" }
 };
 
+const SABIAS_QUE_DATOS = [
+    "La Regla de Oro de la SST indica: 'Si no es seguro, detén el trabajo'. El derecho a rehusarse a tareas inseguras salva miles de vidas anualmente.",
+    "El uso correcto del casco industrial reduce hasta en un 85% el impacto de objetos contundentes en la cabeza.",
+    "Los accidentes de trayecto (itínere) también forman parte de la cobertura y matriz de gestión de la salud ocupacional.",
+    "Un orden y limpieza impecables (5S) en las áreas logísticas elimina de raíz el 60% de las caídas y tropezones en el trabajo.",
+    "Tomarse micro-pausas activas de 5 minutos cada 2 horas reduce drásticamente la fatiga muscular y los errores operativos en campo.",
+    "El uso de calzado con punta de protección evita aplastamientos equivalentes a caídas de objetos de más de 20 kg."
+];
+
 let usuarioActivo = JSON.parse(sessionStorage.getItem("sesion_usuario")) || null;
 let actividades = JSON.parse(localStorage.getItem("act")) || [];
 let reportes = JSON.parse(localStorage.getItem("rep")) || [];
 let asociados = JSON.parse(localStorage.getItem("asoc")) || [];
 let inducciones = JSON.parse(localStorage.getItem("ind")) || [];
 
-// Se mantiene en LocalStorage para no perder tus datos pero no se cruza en la página inicial
-let accidentabilidadDatos = JSON.parse(localStorage.getItem("acc_stats")) || {
-    fecha: obtenerFechaHoyLocal(),
-    dias: 66,
-    colaboradores: 55,
-    jornada: 8,
-    recordAnterior: 244
+// Multi-empresa independiente para Accidentabilidad
+let accidentabilidadMaestra = JSON.parse(localStorage.getItem("acc_master_3_companies")) || {
+    notions: { fecha: obtenerFechaHoyLocal(), dias: 0, colaboradores: 55, jornada: 8, recordAnterior: 0 },
+    now: { fecha: obtenerFechaHoyLocal(), dias: 0, colaboradores: 30, jornada: 8, recordAnterior: 0 },
+    gtg: { fecha: obtenerFechaHoyLocal(), dias: 0, colaboradores: 20, jornada: 8, recordAnterior: 0 }
 };
 
 let myCategoryChart = null;
@@ -890,6 +942,14 @@ function obtenerFechaHoyLocal() {
     let mm = String(d.getMonth() + 1).padStart(2, '0');
     let dd = String(d.getDate()).padStart(2, '0');
     return `${yyyy}-${mm}-${dd}`;
+}
+
+function rotarSabiasQue() {
+    let elem = document.getElementById("sabias-que-texto");
+    if(elem) {
+        let indice = Math.floor(Math.random() * SABIAS_QUE_DATOS.length);
+        elem.innerText = SABIAS_QUE_DATOS[indice];
+    }
 }
 
 function login(e) {
@@ -916,6 +976,7 @@ function verificarSesion() {
         document.getElementById("user-display").innerText = `Rol: ${usuarioActivo.nombre}`;
         
         configurarSelectoresPorRol();
+        rotarSabiasQue();
 
         let puedeSupervisar = usuarioActivo.rol === "admin" || usuarioActivo.rol === "supervisor";
         document.getElementById("admin-view-selector").style.display = puedeSupervisar ? "flex" : "none";
@@ -925,13 +986,9 @@ function verificarSesion() {
             document.getElementById("filtroCalendarioDia").value = obtenerFechaHoyLocal();
         }
 
-        // Rellenar formulario aislado de accidentabilidad
-        document.getElementById("acc_fecha_actualizacion").value = accidentabilidadDatos.fecha;
-        document.getElementById("acc_input_dias").value = accidentabilidadDatos.dias;
-        document.getElementById("acc_colaboradores").value = accidentabilidadDatos.colaboradores;
-        document.getElementById("acc_jornada").value = accidentabilidadDatos.jornada;
-        document.getElementById("acc_record_anterior").value = accidentabilidadDatos.recordAnterior;
-        calcularHorasEnCaliente();
+        // Cargar por defecto los datos de la primera empresa seleccionada
+        let compañiaPorDefecto = document.getElementById("acc_empresa_selector").value;
+        cargarEmpresaAccidentabilidad(compañiaPorDefecto);
 
         ejecutarFiltroGlobal();
     } else {
@@ -980,6 +1037,7 @@ function showSection(id){
     document.getElementById(id).classList.add("active");
     document.querySelectorAll(".sidebar a").forEach(a=>a.classList.remove("active-menu"));
     document.getElementById(`menu-${id}`).classList.add("active-menu");
+    if(id === 'inicio') rotarSabiasQue();
     if(id === 'indicadores' || id === 'inicio') updateCharts();
 }
 
@@ -988,7 +1046,24 @@ function limpiarFiltroFecha() {
     ejecutarFiltroGlobal();
 }
 
-/* CÁLCULO INDEPENDIENTE DE LA PIZARRA DE ACCIDENTABILIDAD */
+/* GESTIÓN MULTI-EMPRESA TOTALMENTE AISLADA DE ACCIDENTABILIDAD */
+function cargarEmpresaAccidentabilidad(empresaKey) {
+    let datos = accidentabilidadMaestra[empresaKey];
+    
+    // Mapeo estético de nombres
+    let nombresMap = { notions: "Notions Dominicana", now: "Now Logistics", gtg: "GTG" };
+    document.getElementById("txt-btn-empresa").innerText = nombresMap[empresaKey];
+
+    // Llenar campos del formulario
+    document.getElementById("acc_fecha_actualizacion").value = datos.fecha || obtenerFechaHoyLocal();
+    document.getElementById("acc_input_dias").value = datos.dias;
+    document.getElementById("acc_colaboradores").value = datos.colaboradores;
+    document.getElementById("acc_jornada").value = datos.jornada;
+    document.getElementById("acc_record_anterior").value = datos.recordAnterior;
+    
+    calcularHorasEnCaliente();
+}
+
 function calcularHorasEnCaliente() {
     let dias = parseInt(document.getElementById("acc_input_dias").value) || 0;
     let colab = parseInt(document.getElementById("acc_colaboradores").value) || 0;
@@ -1000,15 +1075,20 @@ function calcularHorasEnCaliente() {
 
 function guardarDatosAccidentabilidad(e) {
     e.preventDefault();
-    accidentabilidadDatos = {
+    let empresaKey = document.getElementById("acc_empresa_selector").value;
+    
+    accidentabilidadMaestra[empresaKey] = {
         fecha: document.getElementById("acc_fecha_actualizacion").value,
         dias: parseInt(document.getElementById("acc_input_dias").value) || 0,
         colaboradores: parseInt(document.getElementById("acc_colaboradores").value) || 0,
         jornada: parseInt(document.getElementById("acc_jornada").value) || 0,
         recordAnterior: parseInt(document.getElementById("acc_record_anterior").value) || 0
     };
-    localStorage.setItem("acc_stats", JSON.stringify(accidentabilidadDatos));
-    alert("¡Pizarra de Accidentabilidad guardada localmente para esta empresa!");
+    
+    localStorage.setItem("acc_master_3_companies", JSON.stringify(accidentabilidadMaestra));
+    
+    let nombresMap = { notions: "Notions Dominicana", now: "Now Logistics", gtg: "GTG" };
+    alert(`¡Pizarra de Accidentabilidad de [${nombresMap[empresaKey]}] actualizada de forma aislada!`);
 }
 
 /* INDUCCIONES DE SEGURIDAD */
