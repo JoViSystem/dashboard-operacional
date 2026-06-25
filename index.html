@@ -42,7 +42,7 @@ body {
     content: "";
     position: absolute;
     top: 0; left: 0; right: 0; height: 6px;
-    background: repeating-linear-gradient(-45deg, var(--sec-yellow), var(--sec-yellow) 10px, #000 10px, #000 20px);
+    background: repeating-linear-gradient(-45deg, var(--sec-yellow), var(--sec-yellow) 10px, #000 10px, #00 Black 20px);
 }
 
 .login-card {
@@ -277,9 +277,6 @@ h2.section-title {
     border-top: 4px solid var(--accent-blue);
 }
 
-.card:nth-child(2) { border-top-color: var(--sec-yellow); }
-.card:nth-child(3) { border-top-color: var(--sec-green); }
-
 .card h3 {
     margin: 0;
     font-size: 14px;
@@ -293,6 +290,63 @@ h2.section-title {
     font-weight: 700;
     margin: 12px 0 0 0;
     color: var(--sidebar-bg);
+}
+
+/* CAPSULA DE SEGURIDAD */
+.capsule-box {
+    background: #eff6ff;
+    border-left: 5px solid var(--accent-blue);
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin-bottom: 24px;
+    font-size: 14px;
+    color: #1e3a8a;
+    font-weight: 500;
+}
+
+/* PLANIFICADOR SEMANAL */
+.weekly-planner {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 25px;
+    overflow-x: auto;
+    padding-bottom: 10px;
+}
+
+.day-column {
+    background: white;
+    padding: 12px;
+    border-radius: 10px;
+    min-width: 130px;
+    flex: 1;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+    text-align: center;
+    border-top: 3px solid #cbd5e1;
+}
+
+.day-column.today {
+    border-top-color: var(--accent-blue);
+    background: #f8fafc;
+}
+
+.day-title {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--sidebar-bg);
+    margin-bottom: 6px;
+}
+
+.day-date {
+    font-size: 11px;
+    color: #64748b;
+    margin-bottom: 10px;
+}
+
+.day-stats {
+    font-size: 11px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
 /* FORMULARIOS */
@@ -426,26 +480,6 @@ table select {
     border-color: var(--sec-red);
 }
 
-.log-box {
-    max-height: 120px;
-    overflow-y: auto;
-    border: 1px solid #e2e8f0;
-    padding: 8px;
-    border-radius: 6px;
-    background: #f8fafc;
-}
-
-.log-item {
-    font-size: 12px;
-    padding: 6px 8px;
-    background: white;
-    border-left: 3px solid var(--accent-blue);
-    margin-bottom: 4px;
-    border-radius: 0 4px 4px 0;
-    line-height: 1.4;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
-}
-
 /* BADGES */
 .badge-rojo { background-color: #fee2e2 !important; color: #b91c1c !important; }
 .badge-amarillo { background-color: #fef9c3 !important; color: #a16207 !important; }
@@ -482,7 +516,6 @@ table select {
     font-weight: 600;
 }
 
-/* ESTILOS EXCLUSIVOS PARA IMPRESIÓN / REPORTE PDF */
 @media print {
     .sidebar, form, .admin-filter, .calendar-filter-box, .export-bar, .btn-export-pdf, th:nth-last-child(1), td:nth-last-child(1) {
         display: none !important;
@@ -524,47 +557,55 @@ table select {
         <a id="menu-inicio" onclick="showSection('inicio')" class="active-menu">📊 Inicio (Dashboard)</a>
         <a id="menu-actividades" onclick="showSection('actividades')">📋 Actividades</a>
         <a id="menu-reportes" onclick="showSection('reportes')">⚠️ Control de Reportes</a>
+        <a id="menu-asociados" onclick="showSection('asociados')">🤝 Asociados & Inducciones</a>
         <a id="menu-indicadores" onclick="showSection('indicadores')">📈 Indicadores</a>
-        <a id="menu-asociados" onclick="showSection('asociados')">🤝 Asociados de Negocios</a>
         
         <a onclick="logout()" class="btn-logout">🚪 Cerrar Sesión</a>
     </div>
 
     <div class="main">
 
+        <!-- INICIO / DASHBOARD -->
         <div id="inicio" class="section active">
             <h1 id="welcome-title">Dashboard General</h1>
 
+            <div id="safety-capsule" class="capsule-box">💡 Carga de Información...</div>
+
             <div id="admin-view-selector" class="admin-filter" style="display:none;">
                 <strong>🔍 Filtro de Inspección (Ver datos de):</strong>
-                <select id="filtroEmpleado" onchange="ejecutarFiltroGlobal();">
-                    </select>
+                <select id="filtroEmpleado" onchange="ejecutarFiltroGlobal();"></select>
             </div>
 
             <p id="dashboard-date-indicator" style="font-size:14px; font-weight:600; color:var(--accent-blue); margin-top:-15px; margin-bottom:20px;">⏱️ Mostrando métricas del día actual</p>
 
             <div class="cards">
-                <div class="card">
+                <div class="card" style="border-top-color: var(--accent-blue);">
                     <h3>Actividad Total</h3>
                     <p id="total">0</p>
                 </div>
-                <div class="card">
+                <div class="card" style="border-top-color: var(--sec-yellow);">
                     <h3>Horas Totales del Día</h3>
                     <p id="horas">0</p>
                 </div>
-                <div class="card">
+                <div class="card" style="border-top-color: var(--sec-green);">
                     <h3>Nivel de Cumplimiento</h3>
                     <p id="cumplimiento">0%</p>
+                </div>
+                <div class="card" style="border-top-color: #f97316;">
+                    <h3>Días Sin Accidentes</h3>
+                    <p id="dias-sin-accidentes" style="color: var(--sec-green);">0</p>
+                    <span id="record-accidentes" style="font-size:12px; color:#64748b; font-weight:600;">Récord: 0 días</span>
                 </div>
             </div>
 
             <button class="btn-export-pdf" onclick="window.print()">📄 Exportar Reporte Ejecutivo del Día (PDF)</button>
         </div>
 
+        <!-- ACTIVIDADES -->
         <div id="actividades" class="section">
             <h1>📋 Gestión de Actividades de Seguridad</h1>
             
-            <form id="actividadForm">
+            <form id="actividadForm" onsubmit="guardarActividad(event)">
                 <input id="titulo" placeholder="Título de la actividad / Tarea de campo" required>
                 <div class="form-group-row">
                     <div>
@@ -613,6 +654,9 @@ table select {
                 <button type="submit">💾 Guardar Actividad</button>
             </form>
 
+            <h2 class="section-title">📅 Planificador y Carga Semanal</h2>
+            <div class="weekly-planner" id="semanal-container"></div>
+
             <h2 class="section-title">Actividades Planificadas</h2>
             
             <div class="calendar-filter-box">
@@ -641,9 +685,10 @@ table select {
             </table>
         </div>
 
+        <!-- REPORTES -->
         <div id="reportes" class="section">
             <h1>⚠️ Mesa de Control de Reportes Recibidos</h1>
-            <form id="reporteForm">
+            <form id="reporteForm" onsubmit="guardarReporte(event)">
                 <div class="form-group-row">
                     <div><label>Título o Anomalía</label><input id="r_titulo" required></div>
                     <div><label>Reportado por</label><input id="r_origen" required></div>
@@ -676,10 +721,11 @@ table select {
             </table>
         </div>
 
+        <!-- ASOCIADOS E INDUCCIONES -->
         <div id="asociados" class="section">
             <h1>🤝 Gestión de Asociados de Negocios</h1>
             
-            <form id="asociadoForm">
+            <form id="asociadoForm" onsubmit="guardarAsociado(event)">
                 <div class="form-group-row">
                     <div>
                         <label>Nombre del Asociado / Empresa / Proveedor</label>
@@ -744,8 +790,79 @@ table select {
                 </thead>
                 <tbody id="tablaAsociadosHistorialGlobal"></tbody>
             </table>
+
+            <!-- MODULO DE INDUCCIONES DE SEGURIDAD INDUSTRIAL -->
+            <h1 style="margin-top: 60px;">🛡️ Módulo de Inducciones de Seguridad</h1>
+            <form id="induccionForm" onsubmit="guardarInduccion(event)">
+                <div class="form-group-row">
+                    <div>
+                        <label>Tipo de Personal</label>
+                        <select id="ind_tipo" onchange="adaptarFormularioInduccion(this.value)">
+                            <option value="Contratista">👷 Contratista</option>
+                            <option value="Visitante">👤 Visitante</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Nombre Completo</label>
+                        <input id="ind_nombre" placeholder="Ej: Juan Pérez" required>
+                    </div>
+                </div>
+
+                <div class="form-group-row">
+                    <div>
+                        <label>Identificación (Cédula/RNC/Pasaporte)</label>
+                        <input id="ind_documento" placeholder="Documento oficial" required>
+                    </div>
+                    <div>
+                        <label>Fecha de la Inducción</label>
+                        <input type="date" id="ind_fecha" required>
+                    </div>
+                </div>
+
+                <!-- Campos dinámicos que cambian según el rol -->
+                <div class="form-group-row" id="campos-dinamicos-induccion">
+                    <div>
+                        <label>Empresa Contratista</label>
+                        <input id="ind_empresa" placeholder="Empresa externa">
+                    </div>
+                    <div>
+                        <label>ARL / Seguro de Riesgos Laborales</label>
+                        <input id="ind_arl" placeholder="Número de póliza vigente o estatus">
+                    </div>
+                </div>
+
+                <div class="form-group-row" style="margin-top: 10px;">
+                    <div>
+                        <label>Estructura / Área de Acceso Autorizada</label>
+                        <input id="ind_area" placeholder="Ej: Planta de Producción, Almacén, Oficinas" required>
+                    </div>
+                </div>
+
+                <button type="submit" style="background: var(--sec-green);">📋 Registrar y Validar Inducción</button>
+            </form>
+
+            <h2 class="section-title">📜 Registro Histórico y Vigencias de Acceso</h2>
+            <div class="export-bar">
+                <button class="btn-export-excel" style="background:#059669 !important;" onclick="exportarInduccionesExcel()">📥 Exportar Registro de Inducciones a Excel</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Personal</th>
+                        <th>Nombre</th>
+                        <th>Documento / Empresa</th>
+                        <th>Área Permitida</th>
+                        <th>Fecha Registro</th>
+                        <th>Fecha Vencimiento</th>
+                        <th>Vigencia Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaInducciones"></tbody>
+            </table>
         </div>
 
+        <!-- INDICADORES -->
         <div id="indicadores" class="section">
             <h1>📈 Indicadores Estadísticos HSE</h1>
             <div class="charts-container">
@@ -765,10 +882,20 @@ const USUARIOS_VALIDOS = {
     "vtorres": { clave: "1234", rol: "supervisor", nombre: "Victor Torres" }
 };
 
+const CAPSULAS_HSE = [
+    "💡 Sabías que: El uso correcto del casco reduce hasta en un 80% la gravedad de las lesiones craneales mecánicas en obra.",
+    "💡 Sabías que: Reportar una condición insegura a tiempo puede salvar la vida de un compañero antes de comenzar el turno.",
+    "💡 Sabías que: La fatiga laboral reduce los reflejos corporales en un 50%. Tomar pausas activas mejora el enfoque.",
+    "💡 Sabías que: Mantener los pasillos limpios y libres de herramientas evita el 65% de los tropiezos y caídas a nivel.",
+    "💡 Sabías que: Toda herramienta eléctrica debe inspeccionarse visualmente antes de conectarse para evitar descargas."
+];
+
 let usuarioActivo = JSON.parse(sessionStorage.getItem("sesion_usuario")) || null;
 let actividades = JSON.parse(localStorage.getItem("act")) || [];
 let reportes = JSON.parse(localStorage.getItem("rep")) || [];
 let asociados = JSON.parse(localStorage.getItem("asoc")) || [];
+let inducciones = JSON.parse(localStorage.getItem("ind")) || [];
+let recordDiasSinAccidentes = parseInt(localStorage.getItem("record_dias")) || 0;
 
 let myCategoryChart = null;
 let myComplianceChart = null;
@@ -781,9 +908,14 @@ function obtenerFechaHoyLocal() {
     return `${yyyy}-${mm}-${dd}`;
 }
 
+function rotarCapsulaHSE() {
+    let index = Math.floor(Math.random() * CAPSULAS_HSE.length);
+    document.getElementById("safety-capsule").innerText = CAPSULAS_HSE[index];
+}
+
 function login(e) {
     e.preventDefault();
-    let user = document.getElementById("username").value.trim();
+    let user = document.getElementById("username").value.trim().toLowerCase();
     let pass = document.getElementById("password").value;
     if (USUARIOS_VALIDOS[user] && USUARIOS_VALIDOS[user].clave === pass) {
         usuarioActivo = { username: user, ...USUARIOS_VALIDOS[user] };
@@ -805,6 +937,7 @@ function verificarSesion() {
         document.getElementById("user-display").innerText = `Rol: ${usuarioActivo.nombre}`;
         
         configurarSelectoresPorRol();
+        rotarCapsulaHSE();
 
         let puedeSupervisar = usuarioActivo.rol === "admin" || usuarioActivo.rol === "supervisor";
         document.getElementById("admin-view-selector").style.display = puedeSupervisar ? "flex" : "none";
@@ -812,6 +945,9 @@ function verificarSesion() {
         
         if(!document.getElementById("filtroCalendarioDia").value){
             document.getElementById("filtroCalendarioDia").value = obtenerFechaHoyLocal();
+        }
+        if(!document.getElementById("ind_fecha").value){
+            document.getElementById("ind_fecha").value = obtenerFechaHoyLocal();
         }
 
         ejecutarFiltroGlobal();
@@ -837,8 +973,8 @@ function configurarSelectoresPorRol() {
                        <option value="vtorres">Victor Torres</option>`;
 
     if (usuarioActivo.rol === "admin") {
-        optionsFiltro += `<option value="DCumplimiento">Super Administrador</option>`;
-        optionsForm += `<option value="DCumplimiento">Super Administrador</option>`;
+        optionsFiltro += `<option value="dcumplimiento">Super Administrador</option>`;
+        optionsForm += `<option value="dcumplimiento">Super Administrador</option>`;
     }
 
     filtroSelect.innerHTML = optionsFiltro;
@@ -852,7 +988,13 @@ function getFiltroUsuario() {
 }
 
 function ejecutarFiltroGlobal() {
-    render(); renderRep(); renderAsociados(); updateCharts();
+    calcularDiasSinAccidentes();
+    render(); 
+    renderRep(); 
+    renderAsociados(); 
+    renderPlanificadorSemanal();
+    renderInducciones();
+    updateCharts();
 }
 
 function showSection(id){
@@ -868,7 +1010,66 @@ function limpiarFiltroFecha() {
     ejecutarFiltroGlobal();
 }
 
-/* RENDERS & LOGICA */
+function calcularDiasSinAccidentes() {
+    let ultimoAccidenteFecha = null;
+    
+    // Un accidente se tipifica si el reporte es Área "Incidente" y Criticidad "Alto"
+    reportes.forEach(r => {
+        if(r.tipo === "Incidente" && r.criticidad === "Alto") {
+            if(!ultimoAccidenteFecha || new Date(r.fecha) > new Date(ultimoAccidenteFecha)) {
+                ultimoAccidenteFecha = r.fecha;
+            }
+        }
+    });
+
+    let dias = 0;
+    let hoy = new Date(obtenerFechaHoyLocal());
+    
+    if(ultimoAccidenteFecha) {
+        let fAccidente = new Date(ultimoAccidenteFecha);
+        let diff = hoy - fAccidente;
+        dias = Math.floor(diff / (1000 * 60 * 60 * 24));
+        if(dias < 0) dias = 0;
+    } else {
+        // Si no hay registrados, calculamos desde una fecha base estática o un año atrás
+        dias = 45; 
+    }
+
+    if(dias > recordDiasSinAccidentes) {
+        recordDiasSinAccidentes = dias;
+        localStorage.setItem("record_dias", recordDiasSinAccidentes);
+    }
+
+    document.getElementById("dias-sin-accidentes").innerText = dias;
+    document.getElementById("record-accidentes").innerText = `Récord: ${recordDiasSinAccidentes} días`;
+}
+
+function adaptarFormularioInduccion(tipo) {
+    let container = document.getElementById("campos-dinamicos-induccion");
+    if(tipo === "Contratista") {
+        container.innerHTML = `
+            <div>
+                <label>Empresa Contratista</label>
+                <input id="ind_empresa" placeholder="Empresa externa" required>
+            </div>
+            <div>
+                <label>ARL / Seguro de Riesgos Laborales</label>
+                <input id="ind_arl" placeholder="Número de póliza vigente o estatus" required>
+            </div>`;
+    } else {
+        container.innerHTML = `
+            <div>
+                <label>Motivo de la Visita o Inspección</label>
+                <input id="ind_empresa" placeholder="Ej: Auditoría, Visita Técnica, Proveedor" required>
+            </div>
+            <div>
+                <label>Persona Interna de Contacto / Anfitrión</label>
+                <input id="ind_arl" placeholder="Nombre de quien recibe la visita" required>
+            </div>`;
+    }
+}
+
+/* RENDERS PRINCIPALES */
 function render(){
     let tabla = document.getElementById("tabla");
     let tablaHistorial = document.getElementById("tablaHistorial");
@@ -891,8 +1092,8 @@ function render(){
     }
 
     actividades.forEach((a, i) => {
-        if (!a.usuario) a.usuario = "DCumplimiento";
-        if (usuarioActivo.rol === "supervisor" && a.usuario === "DCumplimiento") return;
+        if (!a.usuario) a.usuario = "dcumplimiento";
+        if (usuarioActivo.rol === "supervisor" && a.usuario === "dcumplimiento") return;
         if (filtro !== "todos" && a.usuario !== filtro) return;
 
         let coincideConFechaFiltro = (!filtroDia || a.fecha === filtroDia);
@@ -936,8 +1137,8 @@ function render(){
     let horasDiaAsociados = 0;
     let conteoAsociadosDia = 0;
     asociados.forEach(asoc => {
-        if (!asoc.usuario) asoc.usuario = "DCumplimiento";
-        if (usuarioActivo.rol === "supervisor" && asoc.usuario === "DCumplimiento") return;
+        if (!asoc.usuario) asoc.usuario = "dcumplimiento";
+        if (usuarioActivo.rol === "supervisor" && asoc.usuario === "dcumplimiento") return;
         if (filtro !== "todos" && asoc.usuario !== filtro) return;
 
         if (!filtroDia || asoc.fecha === filtroDia) {
@@ -956,282 +1157,419 @@ function render(){
     localStorage.setItem("act", JSON.stringify(actividades));
 }
 
-function cambiarEstadoActividad(index, nuevoEstado) { actividades[index].estado = nuevoEstado; render(); updateCharts(); }
-function eliminarActividad(index) { if(confirm("¿Seguro?")) { actividades.splice(index, 1); render(); updateCharts(); } }
+function renderPlanificadorSemanal() {
+    let container = document.getElementById("semanal-container");
+    container.innerHTML = "";
+    
+    let hoy = new Date();
+    let filtro = getFiltroUsuario();
 
-actividadForm.onsubmit = e => {
+    for (let i = 0; i < 7; i++) {
+        let currentDay = new Date();
+        currentDay.setDate(hoy.getDate() + i);
+        
+        let yyyy = currentDay.getFullYear();
+        let mm = String(currentDay.getMonth() + 1).padStart(2, '0');
+        let dd = String(currentDay.getDate()).padStart(2, '0');
+        let fStr = `${yyyy}-${mm}-${dd}`;
+        
+        let p = 0, ep = 0, c = 0;
+        actividades.forEach(a => {
+            if (filtro !== "todos" && a.usuario !== filtro) return;
+            if (a.fecha === fStr) {
+                if (a.estado === "Pendiente") p++;
+                if (a.estado === "En proceso") ep++;
+                if (a.estado === "Completada") c++;
+            }
+        });
+
+        let labelDia = currentDay.toLocaleDateString('es-ES', { weekday: 'short' }).toUpperCase();
+        let labelFecha = currentDay.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+        let esHoy = (fStr === obtenerFechaHoyLocal()) ? 'today' : '';
+
+        container.innerHTML += `
+            <div class="day-column ${esHoy}">
+                <div class="day-title">${labelDia}</div>
+                <div class="day-date">${labelFecha}</div>
+                <div class="day-stats">
+                    <span style="color:var(--sec-red); font-weight:700;">⚠️ Pend: ${p}</span>
+                    <span style="color:var(--sec-yellow); font-weight:700;">🔄 Proc: ${ep}</span>
+                    <span style="color:var(--sec-green); font-weight:700;">✅ Comp: ${c}</span>
+                </div>
+            </div>`;
+    }
+}
+
+function cambiarEstadoActividad(index, nuevoEstado) { actividades[index].estado = nuevoEstado; render(); renderPlanificadorSemanal(); updateCharts(); }
+function eliminarActividad(index) { if(confirm("¿Seguro?")) { actividades.splice(index, 1); render(); renderPlanificadorSemanal(); updateCharts(); } }
+
+function guardarActividad(e) {
     e.preventDefault();
-    let h1 = hora_inicio.value.split(":"); let h2 = hora_fin.value.split(":");
+    let h1 = document.getElementById("hora_inicio").value.split(":"); 
+    let h2 = document.getElementById("hora_fin").value.split(":");
     let horas = (parseInt(h2[0]) + h2[1]/60) - (parseInt(h1[0]) + h1[1]/60);
-    if (horas < 0) { alert("Hora incorrecta."); return; }
+    if (horas < 0) { alert("La hora de finalización debe ser posterior a la de inicio."); return; }
 
     let asignadoA = document.getElementById("asignar_a").value || usuarioActivo.username;
-    let fechaBaseStr = fecha.value; 
+    let fechaBaseStr = document.getElementById("fecha").value; 
     let frec = document.getElementById("frecuencia").value;
 
     if (frec === "unica") {
-        actividades.push({ usuario: asignadoA, titulo: titulo.value, categoria: categoria.value, fecha: fechaBaseStr, horas: horas, estado: estado.value });
-    } 
-    else if (frec === "diaria") {
-        let dateObj = new Date(fechaBaseStr + "T00:00:00");
-        for (let d = 0; d < 7; d++) {
-            let yyyy = dateObj.getFullYear();
-            let mm = String(dateObj.getMonth() + 1).padStart(2, '0');
-            let dd = String(dateObj.getDate()).padStart(2, '0');
-            let nuevaFecha = `${yyyy}-${mm}-${dd}`;
-            
-            actividades.push({ usuario: asignadoA, titulo: `${titulo.value} (Día ${d+1}/7)`, categoria: categoria.value, fecha: nuevaFecha, horas: horas, estado: estado.value });
-            dateObj.setDate(dateObj.getDate() + 1);
+        actividades.push({
+            usuario: asignadoA,
+            titulo: document.getElementById("titulo").value,
+            categoria: document.getElementById("categoria").value,
+            fecha: fechaBaseStr,
+            horas: horas,
+            estado: document.getElementById("estado").value,
+            observacion: document.getElementById("observacion").value
+        });
+    } else if (frec === "diaria") {
+        let baseDate = new Date(fechaBaseStr + "T00:00:00");
+        for(let d=0; d<7; d++) {
+            let nextD = new Date(baseDate);
+            nextD.setDate(baseDate.getDate() + d);
+            let y = nextD.getFullYear(), m = String(nextD.getMonth()+1).padStart(2,'0'), dd = String(nextD.getDate()).padStart(2,'0');
+            actividades.push({
+                usuario: asignadoA,
+                titulo: document.getElementById("titulo").value,
+                categoria: document.getElementById("categoria").value,
+                fecha: `${y}-${m}-${dd}`,
+                horas: horas,
+                estado: document.getElementById("estado").value,
+                observacion: document.getElementById("observacion").value
+            });
         }
-    } 
-    else if (frec === "mensual") {
-        let dateObj = new Date(fechaBaseStr + "T00:00:00");
-        for (let m = 0; m < 3; m++) {
-            let yyyy = dateObj.getFullYear();
-            let mm = String(dateObj.getMonth() + 1).padStart(2, '0');
-            let dd = String(dateObj.getDate()).padStart(2, '0');
-            let nuevaFecha = `${yyyy}-${mm}-${dd}`;
-
-            actividades.push({ usuario: asignadoA, titulo: `${titulo.value} (Mes ${m+1}/3)`, categoria: categoria.value, fecha: nuevaFecha, horas: horas, estado: estado.value });
-            dateObj.setMonth(dateObj.getMonth() + 1);
+    } else if (frec === "mensual") {
+        let baseDate = new Date(fechaBaseStr + "T00:00:00");
+        for(let m=0; m<3; m++) {
+            let nextD = new Date(baseDate);
+            nextD.setMonth(baseDate.getMonth() + m);
+            let y = nextD.getFullYear(), mo = String(nextD.getMonth()+1).padStart(2,'0'), dd = String(nextD.getDate()).padStart(2,'0');
+            actividades.push({
+                usuario: asignadoA,
+                titulo: document.getElementById("titulo").value,
+                categoria: document.getElementById("categoria").value,
+                fecha: `${y}-${mo}-${dd}`,
+                horas: horas,
+                estado: document.getElementById("estado").value,
+                observacion: document.getElementById("observacion").value
+            });
         }
     }
 
-    actividadForm.reset(); ejecutarFiltroGlobal();
-};
+    document.getElementById("actividadForm").reset();
+    document.getElementById("fecha").value = obtenerFechaHoyLocal();
+    ejecutarFiltroGlobal();
+}
 
-/* REPORTES */
+/* GESTIÓN DE REPORTES MESA CONTROL */
 function renderRep(){
-    let t = document.getElementById("tablaReportes"); t.innerHTML = "";
+    let tabla = document.getElementById("tablaReportes");
+    tabla.innerHTML = "";
     let filtro = getFiltroUsuario();
 
     reportes.forEach((r, i) => {
-        if (!r.usuario) r.usuario = "DCumplimiento";
-        if (usuarioActivo.rol === "supervisor" && r.usuario === "DCumplimiento") return;
-        if (filtro !== "todos" && r.usuario !== filtro) return;
+        if (!r.encargado) r.encargado = "dcumplimiento";
+        if (usuarioActivo.rol === "supervisor" && r.encargado === "dcumplimiento") return;
+        if (filtro !== "todos" && r.encargado !== filtro) return;
 
-        let claseRep = r.estado === "Abierto" ? "badge-rojo" : r.estado === "En proceso" ? "badge-amarillo" : "badge-verde";
-        let deshabilitarSelect = (usuarioActivo.rol !== "admin" && r.usuario !== usuarioActivo.username) ? "disabled" : "";
+        let badgeCrit = r.criticidad === "Bajo" ? "badge-verde" : r.criticidad === "Medio" ? "badge-amarillo" : "badge-rojo";
+        let badgeEst = r.estado === "Abierto" ? "badge-rojo" : r.estado === "En proceso" ? "badge-amarillo" : "badge-verde";
+        let deshabilitar = (usuarioActivo.rol !== "admin" && r.encargado !== usuarioActivo.username) ? "disabled" : "";
+        let nombreDisplay = USUARIOS_VALIDOS[r.encargado] ? USUARIOS_VALIDOS[r.encargado].nombre : "Desconocido";
 
-        t.innerHTML += `
+        tabla.innerHTML += `
         <tr>
-            <td>👤 ${USUARIOS_VALIDOS[r.usuario]?.nombre || "Desconocido"}</td>
-            <td><strong>${r.titulo}</strong></td><td>📣 ${r.origen}</td><td>${r.tipo}</td><td>${r.criticidad}</td>
+            <td style="font-weight:600;">👤 ${nombreDisplay}</td>
+            <td><strong>${r.titulo}</strong><br><small style="color:#64748b;">${r.desc}</small></td>
+            <td>👤 ${r.origen}<br><small>📅 ${r.fecha}</small></td>
+            <td>📁 ${r.tipo}</td>
+            <td><span class="${badgeCrit}" style="padding:4px 8px; border-radius:6px; font-weight:bold; font-size:12px;">${r.criticidad}</span></td>
             <td>
-                <select class="${claseRep}" onchange="cambiarEstadoReporte(${i}, this.value)" ${deshabilitarSelect}>
-                    <option value="Abierto" ${r.estado === "Abierto" ? "selected" : ""}>Abierto</option>
-                    <option value="En proceso" ${r.estado === "En proceso" ? "selected" : ""}>En proceso</option>
-                    <option value="Cerrado" ${r.estado === "Cerrado" ? "selected" : ""}>Cerrado</option>
+                <select class="${badgeEst}" onchange="cambiarEstadoReporte(${i}, this.value)" ${deshabilitar}>
+                    <option value="Abierto" ${r.estado === "Abierto" ? "selected" : ""}>🔴 Abierto</option>
+                    <option value="En proceso" ${r.estado === "En proceso" ? "selected" : ""}>🟡 En proceso</option>
+                    <option value="Cerrado" ${r.estado === "Cerrado" ? "selected" : ""}>✅ Cerrado</option>
                 </select>
             </td>
-            <td><button class="btn-delete" onclick="eliminarReporte(${i})" ${deshabilitarSelect}>🗑️ Borrar</button></td>
+            <td><button class="btn-delete" onclick="eliminarReporte(${i})" ${deshabilitar}>🗑️</button></td>
         </tr>`;
     });
     localStorage.setItem("rep", JSON.stringify(reportes));
 }
-function cambiarEstadoReporte(index, nuevoEstado) { reportes[index].estado = nuevoEstado; renderRep(); }
-function eliminarReporte(index) { if(confirm("¿Eliminar?")) { reportes.splice(index, 1); renderRep(); } }
 
-reporteForm.onsubmit = e => {
+function guardarReporte(e){
     e.preventDefault();
-    let asignadoA = getFiltroUsuario() !== "todos" ? getFiltroUsuario() : usuarioActivo.username;
-    reportes.push({ usuario: asignadoA, titulo: r_titulo.value, origen: r_origen.value, tipo: r_tipo.value, criticidad: r_criticidad.value, desc: r_desc.value, estado: r_estado.value });
-    reporteForm.reset(); renderRep();
-};
+    reportes.push({
+        encargado: usuarioActivo.username,
+        titulo: document.getElementById("r_titulo").value,
+        origen: document.getElementById("r_origen").value,
+        tipo: document.getElementById("r_tipo").value,
+        criticidad: document.getElementById("r_criticidad").value,
+        desc: document.getElementById("r_desc").value,
+        estado: document.getElementById("r_estado").value,
+        fecha: obtenerFechaHoyLocal()
+    });
+    document.getElementById("reporteForm").reset();
+    ejecutarFiltroGlobal();
+}
+function cambiarEstadoReporte(i, est) { reportes[i].estado = est; ejecutarFiltroGlobal(); }
+function eliminarReporte(i) { if(confirm("¿Eliminar reporte?")) { reportes.splice(i, 1); ejecutarFiltroGlobal(); } }
 
 /* ASOCIADOS DE NEGOCIOS */
 function renderAsociados() {
-    let tActivos = document.getElementById("tablaAsociados");
-    let tHistorialGlobal = document.getElementById("tablaAsociadosHistorialGlobal");
-    
-    tActivos.innerHTML = ""; tHistorialGlobal.innerHTML = "";
+    let tbodyActivas = document.getElementById("tablaAsociados");
+    let tbodyGlobal = document.getElementById("tablaAsociadosHistorialGlobal");
+    tbodyActivas.innerHTML = ""; tbodyGlobal.innerHTML = "";
+
     let filtro = getFiltroUsuario();
 
-    asociados.forEach((asoc, i) => {
-        if (!asoc.usuario) asoc.usuario = "DCumplimiento";
-        if (!asoc.historial) asoc.historial = [];
-        if (!asoc.horas) asoc.horas = 0;
+    asociados.forEach((asoc, index) => {
+        if (!asoc.usuario) asoc.usuario = "dcumplimiento";
+        if (usuarioActivo.rol === "supervisor" && asoc.usuario === "dcumplimiento") return;
+        if (filtro !== "todos" && asoc.usuario !== filtro) return;
 
-        if (usuarioActivo.rol === "supervisor" && asoc.usuario === "DCumplimiento") return; 
-        
-        let belongsToFilter = (filtro === "todos" || asoc.usuario === filtro);
-        let claseEst = asoc.estatus === "En depuración" ? "badge-rojo" : asoc.estatus === "En revisión y firma" ? "badge-amarillo" : asoc.estatus === "Listo para enviar" ? "badge-azul" : "badge-verde";
-        let deshabilitarCampos = (usuarioActivo.rol !== "admin" && asoc.usuario !== usuarioActivo.username) ? "disabled" : "";
+        let claseEst = "badge-rojo";
+        if(asoc.estatus === "En revisión y firma") claseEst = "badge-amarillo";
+        if(asoc.estatus === "Listo para enviar") claseEst = "badge-azul";
+        if(asoc.estatus === "Enviado") claseEst = "badge-verde";
 
-        let horasMostrables = typeof asoc.horas === 'number' ? asoc.horas.toFixed(2) : "0.00";
+        let deshabilitar = (usuarioActivo.rol !== "admin" && asoc.usuario !== usuarioActivo.username) ? "disabled" : "";
+        let nombreDisplay = USUARIOS_VALIDOS[asoc.usuario] ? USUARIOS_VALIDOS[asoc.usuario].nombre : "Desconocido";
 
-        if (belongsToFilter) {
-            tActivos.innerHTML += `
-            <tr>
-                <td>
-                    <select class="select-responsable-tabla" onchange="reasignarAsociado(${i}, this.value)" ${deshabilitarCampos}>
-                        <option value="jgarcia" ${asoc.usuario === "jgarcia" ? "selected" : ""}>👤 Joan Garcia</option>
-                        <option value="jhilario" ${asoc.usuario === "jhilario" ? "selected" : ""}>👤 Jhoan Hilario</option>
-                        <option value="vtorres" ${asoc.usuario === "vtorres" ? "selected" : ""}>👤 Victor Torres</option>
-                        ${usuarioActivo.rol === 'admin' ? `<option value="DCumplimiento" ${asoc.usuario === "DCumplimiento" ? "selected" : ""}>Super Admin</option>` : ''}
-                    </select>
-                </td>
-                <td><strong>${asoc.nombre}</strong></td>
-                <td>📅 ${asoc.fecha}</td>
-                <td style="font-weight:700; color:var(--accent-blue);">⏱️ ${horasMostrables}h</td>
-                <td>
-                    <select class="${claseEst}" onchange="cambiarEstadoAsociado(${i}, this.value)" ${deshabilitarCampos}>
-                        <option value="En depuración" ${asoc.estatus === "En depuración" ? "selected" : ""}>🔍 En depuración</option>
-                        <option value="En revisión y firma" ${asoc.estatus === "En revisión y firma" ? "selected" : ""}>✍️ En revisión y firma</option>
-                        <option value="Listo para enviar" ${asoc.estatus === "Listo para enviar" ? "selected" : ""}>📦 Listo para enviar</option>
-                        <option value="Enviado" ${asoc.estatus === "Enviado" ? "selected" : ""}>🚀 Enviado</option>
-                    </select>
-                </td>
-                <td><button class="btn-delete" onclick="eliminarAsociado(${i})" ${deshabilitarCampos}>🗑️ Borrar</button></td>
-            </tr>`;
-        }
-
-        let logsHTML = asoc.historial.map(h => `<div class="log-item">⏱️ <strong>${h.fecha}</strong> - ${h.detalle}</div>`).join("");
-        if(!logsHTML) logsHTML = `<em style="color:gray; font-size:12px;">Sin movimientos</em>`;
-
-        let respNombre = USUARIOS_VALIDOS[asoc.usuario]?.nombre || "Desconocido";
-
-        tHistorialGlobal.innerHTML += `
+        tbodyActivas.innerHTML += `
         <tr>
-            <td style="font-weight:600; color:var(--sidebar-bg);">👤 ${respNombre}</td>
-            <td><strong>${asoc.nombre}</strong></td>
-            <td style="font-weight:600;">⏱️ ${horasMostrables}h</td>
-            <td><span class="${claseEst}" style="padding:4px 10px; border-radius:12px; font-size:13px; font-weight:700;">${asoc.estatus}</span></td>
-            <td><div class="log-box">${logsHTML}</div></td>
+            <td style="font-weight:600;">👤 ${nombreDisplay}</td>
+            <td>🏢 ${asoc.nombre}</td>
+            <td>📅 ${asoc.fecha}</td>
+            <td>⏱️ ${(asoc.horas || 0).toFixed(2)}h</td>
+            <td>
+                <select class="${claseEst}" onchange="cambiarEstatusAsociado(${index}, this.value)" ${deshabilitar}>
+                    <option value="En depuración" ${asoc.estatus==="En depuración"?"selected":""}>🔍 En depuración</option>
+                    <option value="En revisión y firma" ${asoc.estatus==="En revisión y firma"?"selected":""}>✍️ En revisión y firma</option>
+                    <option value="Listo para enviar" ${asoc.estatus==="Listo para enviar"?"selected":""}>📦 Listo para enviar</option>
+                    <option value="Enviado" ${asoc.estatus==="Enviado"?"selected":""}>🚀 Enviado</option>
+                </select>
+            </td>
+            <td><button class="btn-delete" onclick="eliminarAsociado(${index})" ${deshabilitar}>🗑️</button></td>
+        </tr>`;
+
+        let logItemsHTML = (asoc.historial || []).map(log => `<div class="log-item">🕒 <strong>${log.fechaLog}</strong> - Cambió a <b>${log.estado}</b> por <i>${log.por}</i></div>`).join("");
+
+        tbodyGlobal.innerHTML += `
+        <tr>
+            <td style="font-weight:600;">📍 En manos de: ${nombreDisplay}</td>
+            <td><strong>${asoc.nombre}</strong><br><small>Asignado el: ${asoc.fecha}</small></td>
+            <td>⏱️ ${(asoc.horas || 0).toFixed(2)}h invertidas</td>
+            <td><span class="${claseEst}" style="padding:4px 10px; border-radius:20px; font-size:12px; font-weight:bold;">${asoc.estatus}</span></td>
+            <td><div class="log-box">${logItemsHTML || '<span style="color:#94a3b8; font-size:12px;">Sin movimientos.</span>'}</div></td>
         </tr>`;
     });
+
     localStorage.setItem("asoc", JSON.stringify(asociados));
 }
 
-function cambiarEstadoAsociado(index, nuevoEst) {
-    let viejoEst = asociados[index].estatus;
-    asociados[index].estatus = nuevoEst;
-    asociados[index].historial.push({ fecha: new Date().toLocaleString(), detalle: `Cambió estatus de [${viejoEst}] a [${nuevoEst}] (Por: ${usuarioActivo.nombre})` });
-    render(); renderAsociados(); 
-}
-
-function reasignarAsociado(index, nuevoResponsable) {
-    let viejoResp = asociados[index].usuario;
-    asociados[index].usuario = nuevoResponsable;
-    asociados[index].historial.push({ fecha: new Date().toLocaleString(), detalle: `Traspasado desde [${USUARIOS_VALIDOS[viejoResp]?.nombre || 'Admin'}] hacia [${USUARIOS_VALIDOS[nuevoResponsable].nombre}]` });
-    render(); renderAsociados();
-}
-
-function eliminarAsociado(index) { if(confirm("¿Eliminar?")) { asociados.splice(index, 1); render(); renderAsociados(); } }
-
-asociadoForm.onsubmit = e => {
+function guardarAsociado(e) {
     e.preventDefault();
-    let h1 = asoc_hora_inicio.value.split(":"); let h2 = asoc_hora_fin.value.split(":");
-    let horasAsoc = (parseInt(h2[0]) + h2[1]/60) - (parseInt(h1[0]) + h1[1]/60);
-    
-    if (horasAsoc < 0) { alert("La hora de fin no puede ser menor."); return; }
-    let asignadoA = document.getElementById("asoc_asignar_a").value || usuarioActivo.username;
-    
-    asociados.push({
-        usuario: asignadoA, nombre: asoc_nombre.value, estatus: asoc_estatus.value, fecha: asoc_fecha.value, horas: horasAsoc,
-        historial: [{ fecha: new Date().toLocaleString(), detalle: `Alta de registro (${horasAsoc.toFixed(2)} hrs de gestión). Asignado a: ${USUARIOS_VALIDOS[asignadoA].nombre}` }]
-    });
-    asociadoForm.reset(); ejecutarFiltroGlobal();
-};
+    let h1 = document.getElementById("asoc_hora_inicio").value.split(":");
+    let h2 = document.getElementById("asoc_hora_fin").value.split(":");
+    let horas = (parseInt(h2[0]) + h2[1]/60) - (parseInt(h1[0]) + h1[1]/60);
+    if(horas < 0) { alert("Las horas operacionales son incorrectas."); return; }
 
-/* LÓGICA DE EXPORTACIÓN A EXCEL (CSV NATIVO) */
-function descargarCSV(contenido, nombreArchivo) {
-    let csvContent = "data:text/csv;charset=utf-8,\uFEFF" + contenido;
-    let encodedUri = encodeURI(csvContent);
+    let asignadoA = document.getElementById("asoc_asignar_a").value || usuarioActivo.username;
+    let estatusInicial = document.getElementById("asoc_estatus").value;
+
+    let nuevoAsoc = {
+        usuario: asignadoA,
+        nombre: document.getElementById("asoc_nombre").value,
+        estatus: estatusInicial,
+        fecha: document.getElementById("asoc_fecha").value,
+        horas: horas,
+        historial: [{
+            fechaLog: new Date().toLocaleString(),
+            estado: estatusInicial,
+            por: usuarioActivo.nombre
+        }]
+    };
+
+    asociados.push(nuevoAsoc);
+    document.getElementById("asociadoForm").reset();
+    document.getElementById("asoc_fecha").value = obtenerFechaHoyLocal();
+    ejecutarFiltroGlobal();
+}
+
+function cambiarEstatusAsociado(index, nuevoEstatus) {
+    asociados[index].estatus = nuevoEstatus;
+    if(!asociados[index].historial) asociados[index].historial = [];
+    
+    asociados[index].historial.push({
+        fechaLog: new Date().toLocaleString(),
+        estado: nuevoEstatus,
+        por: usuarioActivo.nombre
+    });
+
+    ejecutarFiltroGlobal();
+}
+function eliminarAsociado(index) { if(confirm("¿Eliminar asociado?")) { asociados.splice(index, 1); ejecutarFiltroGlobal(); } }
+
+
+/* GESTIÓN DE INDUCCIONES (NUEVO) */
+function renderInducciones() {
+    let tbody = document.getElementById("tablaInducciones");
+    tbody.innerHTML = "";
+
+    let hoy = new Date(obtenerFechaHoyLocal());
+
+    inducciones.forEach((ind, i) => {
+        let fVenc = new Date(ind.fechaVencimiento);
+        let diffTiempo = fVenc - hoy;
+        let diffDias = Math.ceil(diffTiempo / (1000 * 60 * 60 * 24));
+
+        let badgeVigencia = "badge-verde";
+        let textoVigencia = "Vigente ✅";
+
+        if (diffDias <= 0) {
+            badgeVigencia = "badge-rojo";
+            textoVigencia = "Vencido ❌";
+        } else if (diffDias <= 30) {
+            badgeVigencia = "badge-amarillo";
+            textoVigencia = `Por Vencer (${diffDias} días) ⚠️`;
+        }
+
+        let tipoClase = ind.tipo === "Contratista" ? "badge-azul" : "badge-amarillo";
+
+        tbody.innerHTML += `
+        <tr>
+            <td><span class="${tipoClase}" style="padding:4px 8px; border-radius:6px; font-weight:bold; font-size:12px;">${ind.tipo}</span></td>
+            <td style="font-weight:600;">${ind.nombre}</td>
+            <td>Doc: ${ind.documento}<br><small style="color:#64748b;">Ref: ${ind.empresa} (ARL: ${ind.arl})</small></td>
+            <td>📍 ${ind.area}</td>
+            <td>${ind.fechaInduccion}</td>
+            <td style="font-weight:600;">${ind.fechaVencimiento}</td>
+            <td><span class="${badgeVigencia}" style="padding:4px 10px; border-radius:20px; font-size:12px; font-weight:bold;">${textoVigencia}</span></td>
+            <td><button class="btn-delete" onclick="eliminarInduccion(${i})">🗑️</button></td>
+        </tr>`;
+    });
+
+    localStorage.setItem("ind", JSON.stringify(inducciones));
+}
+
+function guardarInduccion(e) {
+    e.preventDefault();
+    let fechaInd = document.getElementById("ind_fecha").value;
+    
+    // Calculo automático de vigencia a 1 año exacto
+    let dateObj = new Date(fechaInd + "T00:00:00");
+    dateObj.setFullYear(dateObj.getFullYear() + 1);
+    let y = dateObj.getFullYear(), m = String(dateObj.getMonth()+1).padStart(2,'0'), d = String(dateObj.getDate()).padStart(2,'0');
+    let fechaVencStr = `${y}-${m}-${d}`;
+
+    inducciones.push({
+        tipo: document.getElementById("ind_tipo").value,
+        nombre: document.getElementById("ind_nombre").value,
+        documento: document.getElementById("ind_documento").value,
+        fechaInduccion: fechaInd,
+        fechaVencimiento: fechaVencStr,
+        empresa: document.getElementById("ind_empresa").value || "N/A",
+        arl: document.getElementById("ind_arl").value || "N/A",
+        area: document.getElementById("ind_area").value
+    });
+
+    document.getElementById("induccionForm").reset();
+    document.getElementById("ind_fecha").value = obtenerFechaHoyLocal();
+    adaptarFormularioInduccion("Contratista");
+    renderInducciones();
+}
+
+function eliminarInduccion(i) { if(confirm("¿Eliminar registro de inducción?")) { inducciones.splice(i, 1); renderInducciones(); } }
+
+
+/* EXPORTACIONES CSV/EXCEL */
+function exportarActividadesExcel() {
+    let csv = "\uFEFFResponsable;Titulo;Categoria;Fecha;Horas;Estado;Observacion\n";
+    actividades.forEach(a => {
+        let name = USUARIOS_VALIDOS[a.usuario] ? USUARIOS_VALIDOS[a.usuario].nombre : "Desconocido";
+        csv += `"${name}";"${a.titulo}";"${a.categoria}";"${a.fecha}";"${a.horas.toFixed(2)}";"${a.estado}";"${a.observacion || ''}"\n`;
+    });
+    descargarCSV("Reporte_Actividades_HSE.csv", csv);
+}
+
+function exportarReportesExcel() {
+    let csv = "\uFEFFAnoto_HSE;Anomalia;Reportado_Por;Area;Criticidad;Estatus;Fecha\n";
+    reportes.forEach(r => {
+        let name = USUARIOS_VALIDOS[r.encargado] ? USUARIOS_VALIDOS[r.encargado].nombre : "Desconocido";
+        csv += `"${name}";"${r.titulo} - ${r.desc}";"${r.origen}";"${r.tipo}";"${r.criticidad}";"${r.estado}";"${r.fecha}"\n`;
+    });
+    descargarCSV("Mesa_Reportes_Anomalias.csv", csv);
+}
+
+function exportarAsociadosExcel() {
+    let csv = "\uFEFFResponsable;Asociado_Empresa;Fecha_Asignacion;Horas_Invertidas;Estatus_Actual\n";
+    asociados.forEach(asoc => {
+        let name = USUARIOS_VALIDOS[asoc.usuario] ? USUARIOS_VALIDOS[asoc.usuario].nombre : "Desconocido";
+        csv += `"${name}";"${asoc.nombre}";"${asoc.fecha}";"${(asoc.horas || 0).toFixed(2)}";"${asoc.estatus}"\n`;
+    });
+    descargarCSV("Flujo_Asociados_Negocio.csv", csv);
+}
+
+function exportarInduccionesExcel() {
+    let csv = "\uFEFFTipo_Personal;Nombre;Documento;Empresa_Referencia;Contacto_ARL;Area_Permitida;Fecha_Induccion;Fecha_Vencimiento\n";
+    inducciones.forEach(ind => {
+        csv += `"${ind.tipo}";"${ind.nombre}";"${ind.documento}";"${ind.empresa}";"${ind.arl}";"${ind.area}";"${ind.fechaInduccion}";"${ind.fechaVencimiento}"\n`;
+    });
+    descargarCSV("Registro_Vigencias_Inducciones.csv", csv);
+}
+
+function descargarCSV(fileName, csvData) {
+    let blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
     let link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", nombreArchivo);
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", fileName);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 }
 
-function exportarActividadesExcel() {
-    let filtro = getFiltroUsuario();
-    let filtroDia = document.getElementById("filtroCalendarioDia").value;
-    
-    let csv = "Responsable,Titulo de Actividad,Categoria,Fecha,Horas Invertidas,Estado\n";
-    
-    actividades.forEach(a => {
-        if (usuarioActivo.rol === "supervisor" && a.usuario === "DCumplimiento") return;
-        if (filtro !== "todos" && a.usuario !== filtro) return;
-        if (filtroDia && a.fecha !== filtroDia) return;
-        
-        let nombre = USUARIOS_VALIDOS[a.usuario]?.nombre || "Desconocido";
-        csv += `"${nombre}","${a.titulo}","${a.categoria}","${a.fecha}","${a.horas.toFixed(2)}","${a.estado}"\n`;
-    });
-    
-    descargarCSV(csv, `Reporte_Actividades_${filtroDia || 'General'}.csv`);
-}
-
-function exportarReportesExcel() {
-    let filtro = getFiltroUsuario();
-    let csv = "Encargado HSE,Anomalia,Reportado Por,Area,Criticidad,Estatus\n";
-    
-    reportes.forEach(r => {
-        if (usuarioActivo.rol === "supervisor" && r.usuario === "DCumplimiento") return;
-        if (filtro !== "todos" && r.usuario !== filtro) return;
-        
-        let nombre = USUARIOS_VALIDOS[r.usuario]?.nombre || "Desconocido";
-        csv += `"${nombre}","${r.titulo}","${r.origen}","${r.tipo}","${r.criticidad}","${r.estado}"\n`;
-    });
-    
-    descargarCSV(csv, "Mesa_de_Control_Reportes.csv");
-}
-
-function exportarAsociadosExcel() {
-    let filtro = getFiltroUsuario();
-    let csv = "Responsable,Asociado o Proveedor,Fecha Registro,Horas de Gestion,Estatus Actual\n";
-    
-    asociados.forEach(asoc => {
-        if (usuarioActivo.rol === "supervisor" && asoc.usuario === "DCumplimiento") return;
-        if (filtro !== "todos" && asoc.usuario !== filtro) return;
-        
-        let nombre = USUARIOS_VALIDOS[asoc.usuario]?.nombre || "Desconocido";
-        csv += `"${nombre}","${asoc.nombre}","${asoc.fecha}","${asoc.horas.toFixed(2)}","${asoc.estatus}"\n`;
-    });
-    
-    descargarCSV(csv, "Control_Asociados_Negocio.csv");
-}
-
-/* GRÁFICAS */
-function updateCharts() {
-    if (!usuarioActivo) return;
-    let filtro = getFiltroUsuario();
-    let filtroDia = document.getElementById("filtroCalendarioDia") ? document.getElementById("filtroCalendarioDia").value : "";
-
-    let listaFiltrada = actividades.filter(a => {
-        if(usuarioActivo.rol === "supervisor" && a.usuario === "DCumplimiento") return false;
-        if(filtroDia && a.fecha !== filtroDia) return false;
-        return filtro === "todos" || a.usuario === filtro;
-    });
-
-    let categorias = ["Seguridad", "Infraestructura", "Ciberseguridad", "Inspecciones", "Auditorías", "Otros"];
-    let conteoCategorias = categorias.map(cat => listaFiltrada.filter(a => a.categoria === cat).length);
-    let completadas = listaFiltrada.filter(a => a.estado === "Completada").length;
-    let pendientesEnProceso = listaFiltrada.length - completadas;
-
+/* MÉTRICAS (CHART.JS) */
+function updateCharts(){
     let ctxCat = document.getElementById("categoryChart");
-    if(ctxCat) {
-        if (myCategoryChart) myCategoryChart.destroy();
-        myCategoryChart = new Chart(ctxCat, {
-            type: 'doughnut',
-            data: { labels: categorias, datasets: [{ data: conteoCategorias, backgroundColor: ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#6b7280'] }] },
-            options: { responsive: true, maintainAspectRatio: false }
-        });
-    }
     let ctxComp = document.getElementById("complianceChart");
-    if(ctxComp) {
-        if (myComplianceChart) myComplianceChart.destroy();
-        myComplianceChart = new Chart(ctxComp, {
-            type: 'bar',
-            data: { labels: ["Completadas", "Pendientes/Proceso"], datasets: [{ label: 'Actividades', data: [completadas, pendientesEnProceso], backgroundColor: ['#10b981', '#f59e0b'] }] },
-            options: { responsive: true, maintainAspectRatio: false }
-        });
-    }
+    if(!ctxCat || !ctxComp) return;
+
+    let filtro = getFiltroUsuario();
+    let catData = { Seguridad:0, Infraestructura:0, Ciberseguridad:0, Inspecciones:0, Auditorías:0, Otros:0 };
+    let compData = { Pendiente: 0, "En proceso": 0, Completada: 0 };
+
+    actividades.forEach(a => {
+        if (filtro !== "todos" && a.usuario !== filtro) return;
+        if(catData[a.categoria] !== undefined) catData[a.categoria]++;
+        if(compData[a.estado] !== undefined) compData[a.estado]++;
+    });
+
+    if(myCategoryChart) myCategoryChart.destroy();
+    myCategoryChart = new Chart(ctxCat, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(catData),
+            datasets: [{ data: Object.values(catData), backgroundColor: ['#3b82f6','#eab308','#ef4444','#10b981','#8b5cf6','#64748b'] }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    if(myComplianceChart) myComplianceChart.destroy();
+    myComplianceChart = new Chart(ctxComp, {
+        type: 'pie',
+        data: {
+            labels: Object.keys(compData),
+            datasets: [{ data: Object.values(compData), backgroundColor: ['#ef4444','#eab308','#10b981'] }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
 }
 
-verificarSesion();
+// Inicialización del sistema al cargar ventana
+window.onload = () => { verificarSesion(); };
 </script>
 </body>
 </html>
