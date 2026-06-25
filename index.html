@@ -541,7 +541,7 @@ table select {
             <div id="admin-view-selector" class="admin-filter" style="display:none;">
                 <strong>🔍 Filtro de Inspección (Ver datos de):</strong>
                 <select id="filtroEmpleado" onchange="ejecutarFiltroGlobal();">
-                    </select>
+                </select>
             </div>
 
             <p id="dashboard-date-indicator" style="font-size:14px; font-weight:600; color:var(--accent-blue); margin-top:-15px; margin-bottom:20px;">⏱️ Mostrando métricas del día actual</p>
@@ -558,18 +558,6 @@ table select {
                 <div class="card">
                     <h3>Nivel de Cumplimiento</h3>
                     <p id="cumplimiento">0%</p>
-                </div>
-            </div>
-
-            <h2 class="section-title">🧯 Estadísticas de Accidentabilidad Activa</h2>
-            <div class="cards" style="margin-top:15px;">
-                <div class="card" style="border-top-color: var(--sec-green);">
-                    <h3>Record Días Sin Accidentes</h3>
-                    <p id="dash-acc-dias">0</p>
-                </div>
-                <div class="card" style="border-top-color: var(--sec-green);">
-                    <h3>Horas Hombre Seguras</h3>
-                    <p id="dash-acc-horas">0</p>
                 </div>
             </div>
 
@@ -691,9 +679,10 @@ table select {
             </table>
         </div>
 
+        <!-- PIZARRA DE ACCIDENTABILIDAD (Totalmente independiente, sin replicar en Dashboard de Inicio) -->
         <div id="accidentabilidad" class="section">
             <h1>📊 Pizarra de Estadísticas de Accidentabilidad</h1>
-            <p style="color: #64748b; margin-top:-10px;">Llevando el control seguro de horas hombre trabajadas según parámetros organizacionales.</p>
+            <p style="color: #64748b; margin-top:-10px;">Control aislado y manual de horas hombre trabajadas según la empresa correspondiente.</p>
             
             <form id="accidentabilidadForm" onsubmit="guardarDatosAccidentabilidad(event)">
                 <div class="form-group-row">
@@ -730,6 +719,7 @@ table select {
             </form>
         </div>
 
+        <!-- INDUCCIONES DE SEGURIDAD INDUSTRIAL -->
         <div id="inducciones" class="section">
             <h1>🦺 Módulo de Inducciones de Seguridad Industrial</h1>
             
@@ -882,7 +872,7 @@ let reportes = JSON.parse(localStorage.getItem("rep")) || [];
 let asociados = JSON.parse(localStorage.getItem("asoc")) || [];
 let inducciones = JSON.parse(localStorage.getItem("ind")) || [];
 
-// Datos globales de accidentabilidad calculados por defecto estilo tu Excel
+// Se mantiene en LocalStorage para no perder tus datos pero no se cruza en la página inicial
 let accidentabilidadDatos = JSON.parse(localStorage.getItem("acc_stats")) || {
     fecha: obtenerFechaHoyLocal(),
     dias: 66,
@@ -935,7 +925,7 @@ function verificarSesion() {
             document.getElementById("filtroCalendarioDia").value = obtenerFechaHoyLocal();
         }
 
-        // Rellenar formulario de accidentabilidad con datos almacenados
+        // Rellenar formulario aislado de accidentabilidad
         document.getElementById("acc_fecha_actualizacion").value = accidentabilidadDatos.fecha;
         document.getElementById("acc_input_dias").value = accidentabilidadDatos.dias;
         document.getElementById("acc_colaboradores").value = accidentabilidadDatos.colaboradores;
@@ -981,9 +971,10 @@ function getFiltroUsuario() {
 }
 
 function ejecutarFiltroGlobal() {
-    render(); renderRep(); renderAsociados(); renderInducciones(); actualizarTarjetasAccidentabilidad(); updateCharts();
+    render(); renderRep(); renderAsociados(); renderInducciones(); updateCharts();
 }
 
+/* NAVEGACIÓN ENTRE SECCIONES */
 function showSection(id){
     document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
     document.getElementById(id).classList.add("active");
@@ -997,7 +988,7 @@ function limpiarFiltroFecha() {
     ejecutarFiltroGlobal();
 }
 
-/* LÓGICA EXCLUSIVA: RECUENTO DE ACCIDENTABILIDAD (ESTILO EXCEL) */
+/* CÁLCULO INDEPENDIENTE DE LA PIZARRA DE ACCIDENTABILIDAD */
 function calcularHorasEnCaliente() {
     let dias = parseInt(document.getElementById("acc_input_dias").value) || 0;
     let colab = parseInt(document.getElementById("acc_colaboradores").value) || 0;
@@ -1017,18 +1008,10 @@ function guardarDatosAccidentabilidad(e) {
         recordAnterior: parseInt(document.getElementById("acc_record_anterior").value) || 0
     };
     localStorage.setItem("acc_stats", JSON.stringify(accidentabilidadDatos));
-    actualizarTarjetasAccidentabilidad();
-    alert("¡Pizarra de Accidentabilidad actualizada exitosamente!");
-    showSection('inicio');
+    alert("¡Pizarra de Accidentabilidad guardada localmente para esta empresa!");
 }
 
-function actualizarTarjetasAccidentabilidad() {
-    let totalHoras = accidentabilidadDatos.dias * accidentabilidadDatos.colaboradores * accidentabilidadDatos.jornada;
-    document.getElementById("dash-acc-dias").innerText = accidentabilidadDatos.dias + " Días";
-    document.getElementById("dash-acc-horas").innerText = totalHoras.toLocaleString() + " hrs";
-}
-
-/* LÓGICA EXCLUSIVA: INDUCCIONES DE SEGURIDAD */
+/* INDUCCIONES DE SEGURIDAD */
 function adaptarFormularioInduccion(tipo) {
     let contenedorDinamico = document.getElementById("campos-dinamicos-induccion");
     if (tipo === "Contratista") {
@@ -1046,7 +1029,6 @@ function guardarInduccion(e) {
     let fechaReg = document.getElementById("ind_fecha").value;
     let empresa_area = document.getElementById("ind_empresa").value;
 
-    // Calcular fecha de vencimiento sumando 1 año completo de forma nativa
     let dateObj = new Date(fechaReg + "T00:00:00");
     dateObj.setFullYear(dateObj.getFullYear() + 1);
     
@@ -1056,12 +1038,7 @@ function guardarInduccion(e) {
     let fechaVenc = `${yyyy}-${mm}-${dd}`;
 
     inducciones.push({
-        tipo: tipo,
-        nombre: nombre,
-        documento: doc,
-        fechaRegistro: fechaReg,
-        fechaVencimiento: fechaVenc,
-        detalle: empresa_area
+        tipo: tipo, nombre: nombre, documento: doc, fechaRegistro: fechaReg, fechaVencimiento: fechaVenc, detalle: empresa_area
     });
 
     localStorage.setItem("ind", JSON.stringify(inducciones));
@@ -1113,10 +1090,11 @@ function exportarInduccionesExcel() {
 }
 
 
-/* RENDERS & LOGICA ORIGINAL */
+/* RENDERS GENERALES */
 function render(){
     let tabla = document.getElementById("tabla");
     let tablaHistorial = document.getElementById("tablaHistorial");
+    if(!tabla) return;
     tabla.innerHTML = ""; tablaHistorial.innerHTML = "";
 
     let horasDiaActividades = 0, okDia = 0, conteoActividadesDia = 0;
@@ -1238,7 +1216,7 @@ actividadForm.onsubmit = e => {
             let nuevaFecha = `${yyyy}-${mm}-${dd}`;
 
             actividades.push({ usuario: asignadoA, titulo: `${titulo.value} (Mes ${m+1}/3)`, categoria: categoria.value, fecha: nuevaFecha, horas: horas, estado: estado.value });
-            dateObj.setMonth(dateObj.getMonth() + 1);
+            dateObj.setMonth(dateObj.setMonth() + 1);
         }
     }
 
@@ -1247,7 +1225,7 @@ actividadForm.onsubmit = e => {
 
 /* REPORTES */
 function renderRep(){
-    let t = document.getElementById("tablaReportes"); t.innerHTML = "";
+    let t = document.getElementById("tablaReportes"); if(!t) return; t.innerHTML = "";
     let filtro = getFiltroUsuario();
 
     reportes.forEach((r, i) => {
@@ -1288,6 +1266,7 @@ reporteForm.onsubmit = e => {
 function renderAsociados() {
     let tActivos = document.getElementById("tablaAsociados");
     let tHistorialGlobal = document.getElementById("tablaAsociadosHistorialGlobal");
+    if(!tActivos) return;
     
     tActivos.innerHTML = ""; tHistorialGlobal.innerHTML = "";
     let filtro = getFiltroUsuario();
@@ -1379,7 +1358,7 @@ asociadoForm.onsubmit = e => {
     asociadoForm.reset(); ejecutarFiltroGlobal();
 };
 
-/* LÓGICA DE EXPORTACIÓN A EXCEL (CSV NATIVO) */
+/* CSV EXPORTS */
 function descargarCSV(contenido, nombreArchivo) {
     let csvContent = "data:text/csv;charset=utf-8,\uFEFF" + contenido;
     let encodedUri = encodeURI(csvContent);
@@ -1394,7 +1373,6 @@ function descargarCSV(contenido, nombreArchivo) {
 function exportarActividadesExcel() {
     let filtro = getFiltroUsuario();
     let filtroDia = document.getElementById("filtroCalendarioDia").value;
-    
     let csv = "Responsable,Titulo de Actividad,Categoria,Fecha,Horas Invertidas,Estado\n";
     
     actividades.forEach(a => {
@@ -1405,7 +1383,6 @@ function exportarActividadesExcel() {
         let nombre = USUARIOS_VALIDOS[a.usuario]?.nombre || "Desconocido";
         csv += `"${nombre}","${a.titulo}","${a.categoria}","${a.fecha}","${a.horas.toFixed(2)}","${a.estado}"\n`;
     });
-    
     descargarCSV(csv, `Reporte_Actividades_${filtroDia || 'General'}.csv`);
 }
 
@@ -1420,7 +1397,6 @@ function exportarReportesExcel() {
         let nombre = USUARIOS_VALIDOS[r.usuario]?.nombre || "Desconocido";
         csv += `"${nombre}","${r.titulo}","${r.origen}","${r.tipo}","${r.criticidad}","${r.estado}"\n`;
     });
-    
     descargarCSV(csv, "Mesa_de_Control_Reportes.csv");
 }
 
@@ -1435,7 +1411,6 @@ function exportarAsociadosExcel() {
         let nombre = USUARIOS_VALIDOS[asoc.usuario]?.nombre || "Desconocido";
         csv += `"${nombre}","${asoc.nombre}","${asoc.fecha}","${asoc.horas.toFixed(2)}","${asoc.estatus}"\n`;
     });
-    
     descargarCSV(csv, "Control_Asociados_Negocio.csv");
 }
 
