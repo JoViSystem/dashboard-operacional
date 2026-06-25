@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Control de Cumplimiento</title>
 
+<!-- Cargamos Chart.js para los Indicadores -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
@@ -54,7 +55,6 @@ body {
     max-width: 420px;
 }
 
-/* Cambios solicitados en Login */
 .login-card h2 {
     margin-top: 0;
     margin-bottom: 8px;
@@ -87,7 +87,6 @@ body {
     overflow-y: auto;
 }
 
-/* Cambios solicitados en Sidebar Interno */
 .sidebar h2 {
     font-size: 21px;
     margin-top: 0;
@@ -174,7 +173,7 @@ h2.section-title {
     padding-bottom: 8px;
 }
 
-/* FILTRO SUPER USUARIO */
+/* FILTROS AVANZADOS */
 .admin-filter {
     background: #fff;
     padding: 16px 24px;
@@ -185,6 +184,41 @@ h2.section-title {
     align-items: center;
     gap: 16px;
     border-left: 5px solid var(--sec-yellow);
+}
+
+.calendar-filter-box {
+    background: #ffffff;
+    padding: 16px 24px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-left: 5px solid var(--accent-blue);
+}
+
+.calendar-filter-box strong {
+    color: var(--sidebar-bg);
+    font-size: 15px;
+}
+
+.calendar-filter-box input[type="date"] {
+    width: auto;
+    margin: 0;
+    padding: 8px 12px;
+    background: var(--bg-main);
+}
+
+.calendar-filter-box button.btn-reset-date {
+    background: #f1f5f9;
+    color: #475569;
+    padding: 8px 14px;
+    font-size: 13px;
+    border: 1px solid #cbd5e1;
+}
+.calendar-filter-box button.btn-reset-date:hover {
+    background: #e2e8f0;
 }
 
 .admin-filter strong {
@@ -200,7 +234,7 @@ h2.section-title {
     border: 1px solid #cbd5e1;
 }
 
-/* INDICADORES (CARDS) */
+/* INDICADORES */
 .cards {
     display: flex;
     gap: 20px;
@@ -366,7 +400,6 @@ table select {
     border-color: var(--sec-red);
 }
 
-/* HISTORIAL LOGS DENTRO DE TABLAS */
 .log-box {
     max-height: 120px;
     overflow-y: auto;
@@ -455,13 +488,15 @@ table select {
 
     <div class="main">
 
+        <!-- DASHBOARD -->
         <div id="inicio" class="section active">
             <h1 id="welcome-title">Dashboard General</h1>
 
             <div id="admin-view-selector" class="admin-filter" style="display:none;">
                 <strong>🔍 Filtro de Inspección (Ver datos de):</strong>
                 <select id="filtroEmpleado" onchange="ejecutarFiltroGlobal();">
-                    </select>
+                    <!-- Inyección dinámica -->
+                </select>
             </div>
 
             <div class="cards">
@@ -480,8 +515,10 @@ table select {
             </div>
         </div>
 
+        <!-- ACTIVIDADES -->
         <div id="actividades" class="section">
             <h1>📋 Gestión de Actividades de Seguridad</h1>
+            
             <form id="actividadForm">
                 <input id="titulo" placeholder="Título de la actividad / Tarea de campo" required>
                 <div class="form-group-row">
@@ -501,9 +538,27 @@ table select {
                         <select id="asignar_a"></select>
                     </div>
                 </div>
-                <input type="date" id="fecha" required>
-                <input type="time" id="hora_inicio" required>
-                <input type="time" id="hora_fin" required>
+
+                <div class="form-group-row">
+                    <div>
+                        <label>🔄 Frecuencia / Recurrencia</label>
+                        <select id="frecuencia">
+                            <option value="unica">Única (Solo este día)</option>
+                            <option value="diaria">🔁 Diaria (Generar para los próximos 7 días)</option>
+                            <option value="mensual">📅 Mensual (Generar para los próximos 3 meses)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Fecha Inicial de la Tarea</label>
+                        <input type="date" id="fecha" required>
+                    </div>
+                </div>
+
+                <div class="form-group-row">
+                    <div><label>Hora Inicio</label><input type="time" id="hora_inicio" required></div>
+                    <div><label>Hora Fin</label><input type="time" id="hora_fin" required></div>
+                </div>
+
                 <select id="estado">
                     <option>Pendiente</option>
                     <option>En proceso</option>
@@ -513,7 +568,15 @@ table select {
                 <button type="submit">💾 Guardar Actividad</button>
             </form>
 
-            <h2 class="section-title">Actividades en Curso</h2>
+            <h2 class="section-title">Actividades Planificadas</h2>
+            
+            <!-- FILTRO DE CALENDARIO PARA TRAZABILIDAD -->
+            <div class="calendar-filter-box">
+                <strong>📅 Trazabilidad Diaria (Filtrar por Día Específico):</strong>
+                <input type="date" id="filtroCalendarioDia" onchange="render();">
+                <button type="button" class="btn-reset-date" onclick="limpiarFiltroFecha();">Ver Todas</button>
+            </div>
+
             <table>
                 <thead>
                     <tr><th>Responsable</th><th>Título</th><th>Categoría</th><th>Fecha</th><th>Horas</th><th>Estado</th><th>Acciones</th></tr>
@@ -530,6 +593,7 @@ table select {
             </table>
         </div>
 
+        <!-- REPORTES -->
         <div id="reportes" class="section">
             <h1>⚠️ Mesa de Control de Reportes Recibidos</h1>
             <form id="reporteForm">
@@ -559,6 +623,7 @@ table select {
             </table>
         </div>
 
+        <!-- ASOCIADOS DE NEGOCIOS -->
         <div id="asociados" class="section">
             <h1>🤝 Gestión de Asociados de Negocios</h1>
             
@@ -620,6 +685,7 @@ table select {
             </table>
         </div>
 
+        <!-- INDICADORES -->
         <div id="indicadores" class="section">
             <h1>📈 Indicadores Estadísticos HSE</h1>
             <div class="charts-container">
@@ -725,6 +791,11 @@ function showSection(id){
     if(id === 'indicadores' || id === 'inicio') updateCharts();
 }
 
+function limpiarFiltroFecha() {
+    document.getElementById("filtroCalendarioDia").value = "";
+    render();
+}
+
 /* ACTIVIDADES */
 function render(){
     let tabla = document.getElementById("tabla");
@@ -733,6 +804,7 @@ function render(){
 
     let horas = 0, ok = 0;
     let filtro = getFiltroUsuario();
+    let filtroDia = document.getElementById("filtroCalendarioDia").value; // YYYY-MM-DD
 
     actividades.forEach((a, i) => {
         if (!a.usuario) a.usuario = "DCumplimiento";
@@ -740,6 +812,9 @@ function render(){
         if (usuarioActivo.rol === "supervisor" && a.usuario === "DCumplimiento") return;
         if (usuarioActivo.rol === "supervisor" && filtro === "todos" && a.usuario === "DCumplimiento") return;
         if (filtro !== "todos" && a.usuario !== filtro) return;
+
+        // Filtro dinámico de trazabilidad por calendario
+        if (filtroDia && a.fecha !== filtroDia) return;
 
         horas += a.horas;
         if(a.estado === "Completada") ok++;
@@ -758,7 +833,7 @@ function render(){
             <td>
                 <select class="${claseEstado}" onchange="cambiarEstadoActividad(${i}, this.value)" ${deshabilitarSelect}>
                     <option value="Pendiente" ${a.estado === "Pendiente" ? "selected" : ""}>⚠️ Pendiente</option>
-                    <option value="En proceso" ${a.estado === "En process" ? "selected" : "" || a.estado === "En proceso" ? "selected" : ""}>🔄 En proceso</option>
+                    <option value="En proceso" ${a.estado === "En proceso" ? "selected" : ""}>🔄 En proceso</option>
                     <option value="Completada" ${a.estado === "Completada" ? "selected" : ""}>✅ Completada</option>
                 </select>
             </td>
@@ -774,6 +849,7 @@ function render(){
 
     let totalFiltrado = actividades.filter(a => {
         if(usuarioActivo.rol === "supervisor" && a.usuario === "DCumplimiento") return false;
+        if (filtroDia && a.fecha !== filtroDia) return false;
         return filtro === "todos" || a.usuario === filtro;
     }).length;
 
@@ -793,7 +869,39 @@ actividadForm.onsubmit = e => {
     if (horas < 0) { alert("Hora incorrecta."); return; }
 
     let asignadoA = document.getElementById("asignar_a").value || usuarioActivo.username;
-    actividades.push({ usuario: asignadoA, titulo: titulo.value, categoria: categoria.value, fecha: fecha.value, horas: horas, estado: estado.value });
+    let fechaBaseStr = fecha.value; // YYYY-MM-DD
+    let frec = document.getElementById("frecuencia").value;
+
+    if (frec === "unica") {
+        actividades.push({ usuario: asignadoA, titulo: titulo.value, categoria: categoria.value, fecha: fechaBaseStr, horas: horas, estado: estado.value });
+    } 
+    else if (frec === "diaria") {
+        // Genera para los siguientes 7 días consecutivos
+        let dateObj = new Date(fechaBaseStr + "T00:00:00");
+        for (let d = 0; d < 7; d++) {
+            let yyyy = dateObj.getFullYear();
+            let mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+            let dd = String(dateObj.getDate()).padStart(2, '0');
+            let nuevaFecha = `${yyyy}-${mm}-${dd}`;
+            
+            actividades.push({ usuario: asignadoA, titulo: `${titulo.value} (Día ${d+1}/7)`, categoria: categoria.value, fecha: nuevaFecha, horas: horas, estado: estado.value });
+            dateObj.setDate(dateObj.getDate() + 1);
+        }
+    } 
+    else if (frec === "mensual") {
+        // Genera el mismo día del mes para los próximos 3 meses
+        let dateObj = new Date(fechaBaseStr + "T00:00:00");
+        for (let m = 0; m < 3; m++) {
+            let yyyy = dateObj.getFullYear();
+            let mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+            let dd = String(dateObj.getDate()).padStart(2, '0');
+            let nuevaFecha = `${yyyy}-${mm}-${dd}`;
+
+            actividades.push({ usuario: asignadoA, titulo: `${titulo.value} (Mes ${m+1}/3)`, categoria: categoria.value, fecha: nuevaFecha, horas: horas, estado: estado.value });
+            dateObj.setMonth(dateObj.getMonth() + 1);
+        }
+    }
+
     actividadForm.reset(); render(); updateCharts();
 };
 
@@ -856,7 +964,6 @@ function renderAsociados() {
         let claseEst = asoc.estatus === "En depuración" ? "badge-rojo" : asoc.estatus === "En revisión y firma" ? "badge-amarillo" : asoc.estatus === "Listo para enviar" ? "badge-azul" : "badge-verde";
         let deshabilitarCampos = (usuarioActivo.rol !== "admin" && asoc.usuario !== usuarioActivo.username) ? "disabled" : "";
 
-        // 1. TABLA FLUJO ACTIVO
         if (belongsToFilter) {
             tActivos.innerHTML += `
             <tr>
@@ -882,7 +989,6 @@ function renderAsociados() {
             </tr>`;
         }
 
-        // 2. TABLA VISTA DE HISTORIAL GLOBAL
         let logsHTML = asoc.historial.map(h => `<div class="log-item">⏱️ <strong>${h.fecha}</strong> - ${h.detalle}</div>`).join("");
         if(!logsHTML) logsHTML = `<em style="color:gray; font-size:12px;">Sin movimientos</em>`;
 
@@ -917,7 +1023,7 @@ function eliminarAsociado(index) { if(confirm("¿Eliminar?")) { asociados.splice
 
 asociadoForm.onsubmit = e => {
     e.preventDefault();
-    let asignadoA = document.getElementById("asoc_assignar_a").value || usuarioActivo.username;
+    let asignadoA = document.getElementById("asoc_asignar_a").value || usuarioActivo.username;
     asociados.push({
         usuario: asignadoA,
         nombre: asoc_nombre.value,
@@ -932,8 +1038,11 @@ asociadoForm.onsubmit = e => {
 function updateCharts() {
     if (!usuarioActivo) return;
     let filtro = getFiltroUsuario();
+    let filtroDia = document.getElementById("filtroCalendarioDia") ? document.getElementById("filtroCalendarioDia").value : "";
+
     let listaFiltrada = actividades.filter(a => {
         if(usuarioActivo.rol === "supervisor" && a.usuario === "DCumplimiento") return false;
+        if(filtroDia && a.fecha !== filtroDia) return false;
         return filtro === "todos" || a.usuario === filtro;
     });
 
