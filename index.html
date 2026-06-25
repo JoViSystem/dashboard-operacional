@@ -293,37 +293,42 @@ h2.section-title {
 /* INDICADORES */
 .cards {
     display: flex;
-    gap: 20px;
+    gap: 16px;
     flex-wrap: wrap;
+    margin-bottom: 20px;
 }
 
 .card {
     background: white;
-    padding: 24px;
+    padding: 20px;
     border-radius: 14px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     flex: 1;
-    min-width: 220px;
+    min-width: 180px;
     border-top: 4px solid var(--accent-blue);
 }
 
-.card:nth-child(2) { border-top-color: var(--sec-yellow); }
-.card:nth-child(3) { border-top-color: var(--sec-green); }
-
 .card h3 {
     margin: 0;
-    font-size: 14px;
+    font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     color: #64748b;
 }
 
 .card p {
-    font-size: 32px;
+    font-size: 28px;
     font-weight: 700;
-    margin: 12px 0 0 0;
+    margin: 10px 0 0 0;
     color: var(--sidebar-bg);
 }
+
+/* VARIANTES DE TARJETAS PREVIAS RESTAURADAS */
+.card.c-total { border-top-color: var(--accent-blue); }
+.card.c-horas { border-top-color: var(--sec-azul); }
+.card.c-cumplimiento { border-top-color: var(--sec-green); }
+.card.c-pendientes { border-top-color: var(--sec-yellow); }
+.card.c-reportes { border-top-color: var(--sec-red); }
 
 /* FORMULARIOS */
 form {
@@ -576,22 +581,31 @@ table select {
 
             <p id="dashboard-date-indicator" style="font-size:14px; font-weight:600; color:var(--accent-blue); margin-top:-15px; margin-bottom:20px;">⏱️ Mostrando métricas del día actual</p>
 
+            <!-- CONTADORES E INDICADORES PREVIOS COMPLETO RESTAURADOS -->
             <div class="cards">
-                <div class="card">
-                    <h3>Actividad Total</h3>
+                <div class="card c-total">
+                    <h3>Carga Operativa Total</h3>
                     <p id="total">0</p>
                 </div>
-                <div class="card">
-                    <h3>Horas Totales del Día</h3>
+                <div class="card c-horas">
+                    <h3>Horas Invertidas Hoy</h3>
                     <p id="horas">0</p>
                 </div>
-                <div class="card">
-                    <h3>Nivel de Cumplimiento</h3>
+                <div class="card c-cumplimiento">
+                    <h3>Cumplimiento General</h3>
                     <p id="cumplimiento">0%</p>
+                </div>
+                <div class="card c-pendientes">
+                    <h3>Tareas Pendientes</h3>
+                    <p id="dash-pendientes">0</p>
+                </div>
+                <div class="card c-reportes">
+                    <h3>Alertas / Reportes Abiertos</h3>
+                    <p id="dash-reportes">0</p>
                 </div>
             </div>
 
-            <!-- SECCIÓN VOLVILDA A AGREGAR: SABÍAS QUE -->
+            <!-- SECCIÓN CONSERVADA: SABÍAS QUE -->
             <div class="sabias-que-container">
                 <h4>💡 ¿Sabías qué? - Cultura de Seguridad</h4>
                 <p id="sabias-que-texto">Cargando dato de concientización...</p>
@@ -715,7 +729,7 @@ table select {
             </table>
         </div>
 
-        <!-- PIZARRA DE ACCIDENTABILIDAD (Totalmente independiente por cada una de las 3 Empresas) -->
+        <!-- PIZARRA DE ACCIDENTABILIDAD CON SECCIÓN DE ANÁLISIS DE DATOS Y GRÁFICAS POR EMPRESA -->
         <div id="accidentabilidad" class="section">
             <h1>📊 Pizarra de Estadísticas de Accidentabilidad</h1>
             <p style="color: #64748b; margin-top:-10px;">Control aislado y manual de horas hombre trabajadas por entidad jurídica.</p>
@@ -762,6 +776,21 @@ table select {
                 </div>
                 <button type="submit" style="background:var(--sidebar-bg); width:100%;">💾 Guardar y Actualizar Pizarra (<span id="txt-btn-empresa">Notions Dominicana</span>)</button>
             </form>
+
+            <!-- NUEVO: APARTADO VISUAL DONDE SE PRESENTAN LOS DATOS DE LAS 3 EMPRESAS Y SU GRÁFICO COMPARATIVO -->
+            <h2 class="section-title">📊 Desglose de Consolidado Estadístico & Horas Proyectadas por Empresa</h2>
+            <div class="charts-container" style="margin-top: 15px;">
+                <div class="chart-box" style="flex: 1.2; min-width: 300px;">
+                    <h3>📈 Comparativa: Horas Hombre Sin Accidentes acumuladas</h3>
+                    <div style="position: relative; height:240px;"><canvas id="accidentabilidadEmpresasChart"></canvas></div>
+                </div>
+                <div style="flex: 0.8; min-width: 250px; background: white; padding: 20px; border-radius: 14px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                    <h3 style="margin-top:0; font-size:14px; color:var(--sidebar-bg); text-transform:uppercase; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">Resumen Resguardado</h3>
+                    <div id="resumen-lista-empresas" style="font-size:14px; display:flex; flex-direction:column; gap:12px; margin-top:10px;">
+                        <!-- Dinámico por JS -->
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- INDUCCIONES DE SEGURIDAD INDUSTRIAL -->
@@ -912,7 +941,7 @@ const USUARIOS_VALIDOS = {
 };
 
 const SABIAS_QUE_DATOS = [
-    "La Regla de Oro de la SST indica: 'Si no es seguro, detén el trabajo'. El derecho a rehusarse a tareas inseguras salva miles de vidas anualmente.",
+    "La Regla de Oro de la SST indica: 'Si no es seguro, detén el trabajo'. El derecho a rehusarse a tareas unsafe salva miles de vidas anualmente.",
     "El uso correcto del casco industrial reduce hasta en un 85% el impacto de objetos contundentes en la cabeza.",
     "Los accidentes de trayecto (itínere) también forman parte de la cobertura y matriz de gestión de la salud ocupacional.",
     "Un orden y limpieza impecables (5S) en las áreas logísticas elimina de raíz el 60% de las caídas y tropezones en el trabajo.",
@@ -935,6 +964,7 @@ let accidentabilidadMaestra = JSON.parse(localStorage.getItem("acc_master_3_comp
 
 let myCategoryChart = null;
 let myComplianceChart = null;
+let myAccidentabilidadChart = null; // Nueva gráfica
 
 function obtenerFechaHoyLocal() {
     let d = new Date();
@@ -986,7 +1016,6 @@ function verificarSesion() {
             document.getElementById("filtroCalendarioDia").value = obtenerFechaHoyLocal();
         }
 
-        // Cargar por defecto los datos de la primera empresa seleccionada
         let compañiaPorDefecto = document.getElementById("acc_empresa_selector").value;
         cargarEmpresaAccidentabilidad(compañiaPorDefecto);
 
@@ -1028,7 +1057,7 @@ function getFiltroUsuario() {
 }
 
 function ejecutarFiltroGlobal() {
-    render(); renderRep(); renderAsociados(); renderInducciones(); updateCharts();
+    render(); renderRep(); renderAsociados(); renderInducciones(); updateCharts(); renderModuloVisualAccidentabilidad();
 }
 
 /* NAVEGACIÓN ENTRE SECCIONES */
@@ -1038,7 +1067,7 @@ function showSection(id){
     document.querySelectorAll(".sidebar a").forEach(a=>a.classList.remove("active-menu"));
     document.getElementById(`menu-${id}`).classList.add("active-menu");
     if(id === 'inicio') rotarSabiasQue();
-    if(id === 'indicadores' || id === 'inicio') updateCharts();
+    if(id === 'indicadores' || id === 'inicio' || id === 'accidentabilidad') updateCharts();
 }
 
 function limpiarFiltroFecha() {
@@ -1050,11 +1079,9 @@ function limpiarFiltroFecha() {
 function cargarEmpresaAccidentabilidad(empresaKey) {
     let datos = accidentabilidadMaestra[empresaKey];
     
-    // Mapeo estético de nombres
     let nombresMap = { notions: "Notions Dominicana", now: "Now Logistics", gtg: "GTG" };
     document.getElementById("txt-btn-empresa").innerText = nombresMap[empresaKey];
 
-    // Llenar campos del formulario
     document.getElementById("acc_fecha_actualizacion").value = datos.fecha || obtenerFechaHoyLocal();
     document.getElementById("acc_input_dias").value = datos.dias;
     document.getElementById("acc_colaboradores").value = datos.colaboradores;
@@ -1088,7 +1115,55 @@ function guardarDatosAccidentabilidad(e) {
     localStorage.setItem("acc_master_3_companies", JSON.stringify(accidentabilidadMaestra));
     
     let nombresMap = { notions: "Notions Dominicana", now: "Now Logistics", gtg: "GTG" };
-    alert(`¡Pizarra de Accidentabilidad de [${nombresMap[empresaKey]}] actualizada de forma aislada!`);
+    alert(`¡Pizarra de Accidentabilidad de [${nombresMap[empresaKey]}] actualizada!`);
+    renderModuloVisualAccidentabilidad();
+}
+
+// NUEVO: Render de datos consolidados y lista del módulo de accidentabilidad
+function renderModuloVisualAccidentabilidad() {
+    let contenedorLista = document.getElementById("resumen-lista-empresas");
+    if(!contenedorLista) return;
+    contenedorLista.innerHTML = "";
+
+    let nombresMap = { notions: "Notions Dominicana", now: "Now Logistics", gtg: "GTG" };
+    
+    Object.keys(accidentabilidadMaestra).forEach(key => {
+        let em = accidentabilidadMaestra[key];
+        let calcHoras = em.dias * em.colaboradores * em.jornada;
+        contenedorLista.innerHTML += `
+        <div style="padding: 8px; border-left: 4px solid var(--accent-blue); background: #f8fafc; border-radius: 0 6px 6px 0;">
+            <strong style="color: var(--sidebar-bg);">${nombresMap[key]}</strong><br>
+            <small style="color: #64748b;">📅 Días sin accidentes: <strong>${em.dias} días</strong></small><br>
+            <small style="color: var(--accent-blue); font-weight: bold;">⏱️ Horas seguras: ${calcHoras.toLocaleString()} hrs</small>
+        </div>`;
+    });
+
+    // Forzar actualización de la gráfica específica
+    let ctxAcc = document.getElementById("accidentabilidadEmpresasChart");
+    if(ctxAcc) {
+        let horasNotions = accidentabilidadMaestra.notions.dias * accidentabilidadMaestra.notions.colaboradores * accidentabilidadMaestra.notions.jornada;
+        let horasNow = accidentabilidadMaestra.now.dias * accidentabilidadMaestra.now.colaboradores * accidentabilidadMaestra.now.jornada;
+        let horasGtg = accidentabilidadMaestra.gtg.dias * accidentabilidadMaestra.gtg.colaboradores * accidentabilidadMaestra.gtg.jornada;
+
+        if (myAccidentabilidadChart) myAccidentabilidadChart.destroy();
+        myAccidentabilidadChart = new Chart(ctxAcc, {
+            type: 'bar',
+            data: {
+                labels: ["Notions Dominicana", "Now Logistics", "GTG"],
+                datasets: [{
+                    label: 'Horas Proyectadas de Seguridad',
+                    data: [horasNotions, horasNow, horasGtg],
+                    backgroundColor: ['#2563eb', '#3b82f6', '#1e293b'],
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    }
 }
 
 /* INDUCCIONES DE SEGURIDAD */
@@ -1177,7 +1252,7 @@ function render(){
     if(!tabla) return;
     tabla.innerHTML = ""; tablaHistorial.innerHTML = "";
 
-    let horasDiaActividades = 0, okDia = 0, conteoActividadesDia = 0;
+    let horasDiaActividades = 0, okDia = 0, conteoActividadesDia = 0, pendientesDia = 0;
     let filtro = getFiltroUsuario();
     let filtroDia = document.getElementById("filtroCalendarioDia").value;
     let hoyStr = obtenerFechaHoyLocal();
@@ -1204,6 +1279,7 @@ function render(){
             horasDiaActividades += a.horas;
             conteoActividadesDia++;
             if(a.estado === "Completada") okDia++;
+            if(a.estado === "Pendiente" || a.estado === "En proceso") pendientesDia++;
         }
 
         let claseEstado = a.estado === "Pendiente" ? "badge-rojo" : a.estado === "En proceso" ? "badge-amarillo" : "badge-verde";
@@ -1252,9 +1328,19 @@ function render(){
     let granTotalHorasDia = horasDiaActividades + horasDiaAsociados;
     let granTotalCargaObjetos = conteoActividadesDia + conteoAsociadosDia;
 
+    // Calcular reportes abiertos filtrados
+    let reportesAbiertosConteo = reportes.filter(r => {
+        if (usuarioActivo.rol === "supervisor" && r.usuario === "DCumplimiento") return false;
+        if (filtro !== "todos" && r.usuario !== filtro) return false;
+        return r.estado === "Abierto" || r.estado === "En proceso";
+    }).length;
+
+    // Inyección en interfaz
     document.getElementById("total").innerText = granTotalCargaObjetos;
     document.getElementById("horas").innerText = granTotalHorasDia.toFixed(2) + " hrs";
     document.getElementById("cumplimiento").innerText = conteoActividadesDia ? (okDia / conteoActividadesDia * 100).toFixed(0) + "%" : "100%";
+    document.getElementById("dash-pendientes").innerText = pendientesDia;
+    document.getElementById("dash-reportes").innerText = reportesAbiertosConteo;
     
     localStorage.setItem("act", JSON.stringify(actividades));
 }
@@ -1332,14 +1418,14 @@ function renderRep(){
     });
     localStorage.setItem("rep", JSON.stringify(reportes));
 }
-function cambiarEstadoReporte(index, nuevoEstado) { reportes[index].estado = nuevoEstado; renderRep(); }
-function eliminarReporte(index) { if(confirm("¿Eliminar?")) { reportes.splice(index, 1); renderRep(); } }
+function cambiarEstadoReporte(index, nuevoEstado) { reportes[index].estado = nuevoEstado; renderRep(); render(); }
+function eliminarReporte(index) { if(confirm("¿Eliminar?")) { reportes.splice(index, 1); renderRep(); render(); } }
 
 reporteForm.onsubmit = e => {
     e.preventDefault();
     let asignadoA = getFiltroUsuario() !== "todos" ? getFiltroUsuario() : usuarioActivo.username;
     reportes.push({ usuario: asignadoA, titulo: r_titulo.value, origen: r_origen.value, tipo: r_tipo.value, criticidad: r_criticidad.value, desc: r_desc.value, estado: r_estado.value });
-    reporteForm.reset(); renderRep();
+    reporteForm.reset(); renderRep(); render();
 };
 
 /* ASOCIADOS DE NEGOCIOS */
@@ -1359,7 +1445,7 @@ function renderAsociados() {
         if (usuarioActivo.rol === "supervisor" && asoc.usuario === "DCumplimiento") return; 
         
         let belongsToFilter = (filtro === "todos" || asoc.usuario === filtro);
-        let claseEst = asoc.estatus === "En depuración" ? "badge-rojo" : asoc.estatus === "En revisión y firma" ? "badge-amarillo" : asoc.estatus === "Listo para enviar" ? "badge-azul" : "badge-verde";
+        let claseEst = asoc.estatus === "En depuración" ? "badge-rojo" : asoc.estatus === "En revisión y firma" ? "badge-amarillo" : "badge-azul" ? asoc.estatus === "Listo para enviar" : "badge-verde";
         let deshabilitarCampos = (usuarioActivo.rol !== "admin" && asoc.usuario !== usuarioActivo.username) ? "disabled" : "";
 
         let horasMostrables = typeof asoc.horas === 'number' ? asoc.horas.toFixed(2) : "0.00";
@@ -1529,6 +1615,9 @@ function updateCharts() {
             options: { responsive: true, maintainAspectRatio: false }
         });
     }
+    
+    // Ejecutar renderización de la gráfica de las 3 empresas de manera coordinada
+    renderModuloVisualAccidentabilidad();
 }
 
 verificarSesion();
