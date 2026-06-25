@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Compliance & Continuous Improvement System</title>
 
+<!-- Cargamos Chart.js para los Indicadores -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
@@ -72,6 +73,7 @@ body {
     padding: 24px;
     box-sizing: border-box;
     box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+    overflow-y: auto;
 }
 
 .sidebar h2 {
@@ -122,7 +124,7 @@ body {
 .btn-logout {
     background: #451a03 !important;
     color: #f97316 !important;
-    margin-top: 40px;
+    margin-top: 20px;
     font-weight: 600;
     border: 1px solid #7c2d12 !important;
 }
@@ -145,6 +147,15 @@ h1 {
     color: var(--sidebar-bg);
     margin-top: 0;
     margin-bottom: 24px;
+}
+
+h2.section-title {
+    font-size: 20px;
+    color: var(--sidebar-bg);
+    margin-top: 40px;
+    margin-bottom: 12px;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 8px;
 }
 
 /* FILTRO SUPER USUARIO */
@@ -334,10 +345,11 @@ table select {
     border-color: var(--sec-red);
 }
 
-/* BADGES MODERNOS DE ESTADO Y CRITICIDAD */
+/* BADGES DE ESTADO, CRITICIDAD Y ASOCIADOS */
 .badge-rojo { background-color: #fee2e2 !important; color: #b91c1c !important; }
 .badge-amarillo { background-color: #fef9c3 !important; color: #a16207 !important; }
 .badge-verde { background-color: #dcfce7 !important; color: #15803d !important; }
+.badge-azul { background-color: #dbeafe !important; color: #1e40af !important; }
 
 .badge-crit-alto { background: #b91c1c; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; }
 .badge-crit-medio { background: #d97706; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; }
@@ -380,7 +392,7 @@ table select {
 <div id="login-screen" class="login-container">
     <div class="login-card">
         <div style="text-align: center; margin-bottom: 20px;">
-            <img src="logo-departamento.png" alt="Logo Departamento" style="max-width: 160px; height: auto; fallback: url('https://via.placeholder.com/160x60?text=LOGO+HSE');" onerror="this.style.display='none'">
+            <img src="logo-departamento.png" alt="Logo" style="max-width: 160px; height: auto;" onerror="this.style.display='none'">
         </div>
         <h2>🛡️ Control MC - Ingreso</h2>
         <form id="loginForm" onsubmit="login(event)">
@@ -401,18 +413,20 @@ table select {
         <a id="menu-actividades" onclick="showSection('actividades')">📋 Actividades</a>
         <a id="menu-reportes" onclick="showSection('reportes')">⚠️ Control de Reportes</a>
         <a id="menu-indicadores" onclick="showSection('indicadores')">📈 Indicadores</a>
+        <a id="menu-asociados" onclick="showSection('asociados')">🤝 Asociados de Negocios</a>
         
         <a onclick="logout()" class="btn-logout">🚪 Cerrar Sesión</a>
     </div>
 
     <div class="main">
 
+        <!-- DASHBOARD -->
         <div id="inicio" class="section active">
             <h1 id="welcome-title">Dashboard General</h1>
 
             <div id="admin-view-selector" class="admin-filter" style="display:none;">
                 <strong>🔍 Filtro de Inspección (Ver datos de):</strong>
-                <select id="filtroEmpleado" onchange="render(); renderRep(); updateCharts();">
+                <select id="filtroEmpleado" onchange="render(); renderRep(); renderAsociados(); updateCharts();">
                     <option value="todos">-- Todos los Empleados --</option>
                     <option value="jgarcia">Joan Garcia</option>
                     <option value="jhilario">Jhoan Hilario</option>
@@ -437,19 +451,37 @@ table select {
             </div>
         </div>
 
+        <!-- ACTIVIDADES -->
         <div id="actividades" class="section">
             <h1>📋 Gestión de Actividades de Seguridad</h1>
 
             <form id="actividadForm">
                 <input id="titulo" placeholder="Título de la actividad / Tarea de campo" required>
-                <select id="categoria">
-                    <option>Seguridad</option>
-                    <option>Infraestructura</option>
-                    <option>Ciberseguridad</option>
-                    <option>Inspecciones</option>
-                    <option>Auditorías</option>
-                    <option>Otros</option>
-                </select>
+                
+                <div class="form-group-row">
+                    <div>
+                        <label>Categoría</label>
+                        <select id="categoria">
+                            <option>Seguridad</option>
+                            <option>Infraestructura</option>
+                            <option>Ciberseguridad</option>
+                            <option>Inspecciones</option>
+                            <option>Auditorías</option>
+                            <option>Otros</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>🎯 Asignar a alguien (Opcional):</label>
+                        <select id="asignar_a">
+                            <option value="">-- Mismo (Asignación propia) --</option>
+                            <option value="jgarcia">Joan Garcia</option>
+                            <option value="jhilario">Jhoan Hilario</option>
+                            <option value="vtorres">Victor Torres</option>
+                            <option value="DCumplimiento">Super Administrador</option>
+                        </select>
+                    </div>
+                </div>
+
                 <input type="date" id="fecha" required>
                 <input type="time" id="hora_inicio" required>
                 <input type="time" id="hora_fin" required>
@@ -462,10 +494,11 @@ table select {
                 <button type="submit">💾 Guardar Actividad</button>
             </form>
 
+            <h2 class="section-title">Actividades en Curso</h2>
             <table>
                 <thead>
                     <tr>
-                        <th>Inspector / Usuario</th>
+                        <th>Creador / Responsable</th>
                         <th>Título</th>
                         <th>Categoría</th>
                         <th>Fecha</th>
@@ -476,8 +509,24 @@ table select {
                 </thead>
                 <tbody id="tabla"></tbody>
             </table>
+
+            <h2 class="section-title">📂 Historial Completo de Actividades (Archivo)</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Responsable</th>
+                        <th>Título</th>
+                        <th>Categoría</th>
+                        <th>Fecha</th>
+                        <th>Horas</th>
+                        <th>Estado Final</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaHistorial"></tbody>
+            </table>
         </div>
 
+        <!-- REPORTES -->
         <div id="reportes" class="section">
             <h1>⚠️ Mesa de Control de Reportes Recibidos</h1>
 
@@ -485,17 +534,17 @@ table select {
                 <div class="form-group-row">
                     <div>
                         <label>Título o Anomalía</label>
-                        <input id="r_titulo" placeholder="Ej: Extintor bloqueado o Cable expuesto" required>
+                        <input id="r_titulo" placeholder="Ej: Extintor bloqueado" required>
                     </div>
                     <div>
-                        <label>Reportado por (Persona / Planta)</label>
-                        <input id="r_origen" placeholder="Ej: Ing. Carlos Mendoza o Operador Línea 2" required>
+                        <label>Reportado por</label>
+                        <input id="r_origen" placeholder="Ej: Ing. Carlos Mendoza" required>
                     </div>
                 </div>
 
                 <div class="form-group-row">
                     <div>
-                        <label>Área o Tipo de Riesgo</label>
+                        <label>Área</label>
                         <select id="r_tipo">
                             <option>Infraestructura</option>
                             <option>Seguridad</option>
@@ -504,26 +553,18 @@ table select {
                         </select>
                     </div>
                     <div>
-                        <label>Nivel de Criticidad (Riesgo)</label>
+                        <label>Nivel de Criticidad</label>
                         <select id="r_criticidad">
-                            <option value="Bajo">🟢 Bajo (Oportunidad de mejora)</option>
-                            <option value="Medio">🟡 Medio (Corrección programada)</option>
-                            <option value="Alto">🔴 Alto (Acción inmediata - Peligro)</option>
+                            <option value="Bajo">🟢 Bajo</option>
+                            <option value="Medio">🟡 Medio</option>
+                            <option value="Alto">🔴 Alto</option>
                         </select>
                     </div>
                 </div>
 
-                <label>Descripción detallada de la solicitud o condición</label>
-                <textarea id="r_desc" placeholder="Detalles de lo reportado por el personal..."></textarea>
-                
-                <label>Estatus Inicial</label>
-                <select id="r_estado">
-                    <option>Abierto</option>
-                    <option>En proceso</option>
-                    <option>Cerrado</option>
-                </select>
-                
-                <button type="submit">🚨 Registrar Reporte en Sistema</button>
+                <textarea id="r_desc" placeholder="Detalles de lo reportado..."></textarea>
+                <select id="r_estado"><option>Abierto</option><option>En proceso</option><option>Cerrado</option></select>
+                <button type="submit">🚨 Registrar Reporte</button>
             </form>
 
             <table>
@@ -532,9 +573,9 @@ table select {
                         <th>Encargado HSE</th>
                         <th>Anomalía</th>
                         <th>Reportado Por</th>
-                        <th>Área / Tipo</th>
+                        <th>Área</th>
                         <th>Criticidad</th>
-                        <th>Estatus de Solución</th>
+                        <th>Estatus</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -542,21 +583,55 @@ table select {
             </table>
         </div>
 
+        <!-- ASOCIADOS DE NEGOCIOS -->
+        <div id="asociados" class="section">
+            <h1>🤝 Gestión de Asociados de Negocios</h1>
+            
+            <form id="asociadoForm">
+                <div class="form-group-row">
+                    <div>
+                        <label>Nombre del Asociado / Empresa / Proveedor</label>
+                        <input id="asoc_nombre" placeholder="Ej: Suministros Industriales S.A." required>
+                    </div>
+                    <div>
+                        <label>Estatus del Proceso</label>
+                        <select id="asoc_estatus">
+                            <option value="En depuración">🔍 En depuración</option>
+                            <option value="En revisión y firma">✍️ En revisión y firma</option>
+                            <option value="Listo para enviar">📦 Listo para enviar</option>
+                            <option value="Enviado">🚀 Enviado</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group-row">
+                    <div>
+                        <label>Fecha de Registro / Envío</label>
+                        <input type="date" id="asoc_fecha" required>
+                    </div>
+                </div>
+                <button type="submit">🤝 Registrar Asociado</button>
+            </form>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Registrado Por</th>
+                        <th>Nombre del Asociado</th>
+                        <th>Fecha</th>
+                        <th>Estatus de Negocio</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaAsociados"></tbody>
+            </table>
+        </div>
+
+        <!-- INDICADORES -->
         <div id="indicadores" class="section">
             <h1>📈 Indicadores Estadísticos HSE</h1>
             <div class="charts-container">
-                <div class="chart-box">
-                    <h3>Distribución por Categorías</h3>
-                    <div style="position: relative; height:220px;">
-                        <canvas id="categoryChart"></canvas>
-                    </div>
-                </div>
-                <div class="chart-box">
-                    <h3>Estado de Cumplimiento</h3>
-                    <div style="position: relative; height:220px;">
-                        <canvas id="complianceChart"></canvas>
-                    </div>
-                </div>
+                <div class="chart-box"><h3>Distribución por Categorías</h3><div style="position: relative; height:220px;"><canvas id="categoryChart"></canvas></div></div>
+                <div class="chart-box"><h3>Estado de Cumplimiento</h3><div style="position: relative; height:220px;"><canvas id="complianceChart"></canvas></div></div>
             </div>
         </div>
 
@@ -565,7 +640,7 @@ table select {
 
 <script>
 const USUARIOS_VALIDOS = {
-    "dcumplimiento": { clave: "admin123", rol: "admin", nombre: "Super Administrador" },
+    "DCumplimiento": { clave: "admin123", rol: "admin", nombre: "Super Administrador" },
     "jgarcia": { clave: "1234", rol: "empleado", nombre: "Joan Garcia" },
     "jhilario": { clave: "1234", rol: "empleado", nombre: "Jhoan Hilario" },
     "vtorres": { clave: "1234", rol: "empleado", nombre: "Victor Torres" }
@@ -574,23 +649,20 @@ const USUARIOS_VALIDOS = {
 let usuarioActivo = JSON.parse(sessionStorage.getItem("sesion_usuario")) || null;
 let actividades = JSON.parse(localStorage.getItem("act")) || [];
 let reportes = JSON.parse(localStorage.getItem("rep")) || [];
+let asociados = JSON.parse(localStorage.getItem("asoc")) || [];
 
 let myCategoryChart = null;
 let myComplianceChart = null;
 
-/* LOGIN & CONTROL DE ACCESO */
 function login(e) {
     e.preventDefault();
     let user = document.getElementById("username").value.trim();
     let pass = document.getElementById("password").value;
-
     if (USUARIOS_VALIDOS[user] && USUARIOS_VALIDOS[user].clave === pass) {
         usuarioActivo = { username: user, ...USUARIOS_VALIDOS[user] };
         sessionStorage.setItem("sesion_usuario", JSON.stringify(usuarioActivo));
         verificarSesion();
-    } else {
-        alert("Usuario o contraseña incorrectos.");
-    }
+    } else { alert("Usuario o contraseña incorrectos."); }
 }
 
 function logout() {
@@ -604,46 +676,31 @@ function verificarSesion() {
         document.getElementById("login-screen").style.display = "none";
         document.getElementById("app-content").style.display = "block";
         document.getElementById("user-display").innerText = `Rol: ${usuarioActivo.nombre}`;
-        
-        if (usuarioActivo.rol === "admin") {
-            document.getElementById("admin-view-selector").style.display = "flex";
-            document.getElementById("welcome-title").innerText = "Dashboard Global de Control";
-        } else {
-            document.getElementById("admin-view-selector").style.display = "none";
-            document.getElementById("welcome-title").innerText = `Dashboard - ${usuarioActivo.nombre}`;
-        }
-        
-        document.getElementById("loginForm").reset();
-        render();
-        renderRep();
-        updateCharts();
+        document.getElementById("admin-view-selector").style.display = usuarioActivo.rol === "admin" ? "flex" : "none";
+        document.getElementById("welcome-title").innerText = usuarioActivo.rol === "admin" ? "Dashboard Global de Control" : `Dashboard - ${usuarioActivo.nombre}`;
+        render(); renderRep(); renderAsociados(); updateCharts();
     } else {
         document.getElementById("login-screen").style.display = "flex";
         document.getElementById("app-content").style.display = "none";
     }
 }
 
-/* NAVIGATION */
 function showSection(id){
     document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
     document.getElementById(id).classList.add("active");
-    
     document.querySelectorAll(".sidebar a").forEach(a=>a.classList.remove("active-menu"));
     document.getElementById(`menu-${id}`).classList.add("active-menu");
-
-    if(id === 'indicadores' || id === 'inicio') {
-        updateCharts();
-    }
+    if(id === 'indicadores' || id === 'inicio') updateCharts();
 }
 
-/* ACTIVIDADES */
+/* ACTIVIDADES CON ASIGNACIÓN CRUZADA E HISTORIAL */
 function render(){
     let tabla = document.getElementById("tabla");
+    let tablaHistorial = document.getElementById("tablaHistorial");
     tabla.innerHTML = "";
+    tablaHistorial.innerHTML = "";
 
-    let horas = 0;
-    let ok = 0;
-    
+    let horas = 0, ok = 0;
     let filtro = usuarioActivo.rol === "admin" ? document.getElementById("filtroEmpleado").value : usuarioActivo.username;
 
     actividades.forEach((a, i) => {
@@ -653,19 +710,16 @@ function render(){
         horas += a.horas;
         if(a.estado === "Completada") ok++;
 
-        let claseEstado = "";
-        if(a.estado === "Pendiente") claseEstado = "badge-rojo";
-        if(a.estado === "En proceso") claseEstado = "badge-amarillo";
-        if(a.estado === "Completada") claseEstado = "badge-verde";
-
+        let claseEstado = a.estado === "Pendiente" ? "badge-rojo" : a.estado === "En proceso" ? "badge-amarillo" : "badge-verde";
         let deshabilitarSelect = (usuarioActivo.rol !== "admin" && a.usuario !== usuarioActivo.username) ? "disabled" : "";
         let nombreDisplay = USUARIOS_VALIDOS[a.usuario] ? USUARIOS_VALIDOS[a.usuario].nombre : "Desconocido";
 
+        // 1. Tabla Principal de Gestión Activa
         tabla.innerHTML += `
         <tr>
-            <td style="font-weight:600; color:#1e293b;">👤 ${nombreDisplay}</td>
+            <td style="font-weight:600;">👤 ${nombreDisplay}</td>
             <td>${a.titulo}</td>
-            <td><span style="background:#f1f5f9; padding:4px 8px; border-radius:6px; font-size:13px; font-weight:500;">${a.categoria}</span></td>
+            <td><span style="background:#f1f5f9; padding:4px 8px; border-radius:6px; font-size:13px;">${a.categoria}</span></td>
             <td>📅 ${a.fecha}</td>
             <td style="font-weight:600;">⏱️ ${a.horas.toFixed(2)}h</td>
             <td>
@@ -675,55 +729,54 @@ function render(){
                     <option value="Completada" ${a.estado === "Completada" ? "selected" : ""}>✅ Completada</option>
                 </select>
             </td>
-            <td>
-                <button class="btn-delete" onclick="eliminarActividad(${i})">🗑️ Borrar</button>
-            </td>
+            <td><button class="btn-delete" onclick="eliminarActividad(${i})">🗑️ Borrar</button></td>
+        </tr>`;
+
+        // 2. Tabla de Historial Permanente (Abajo)
+        tablaHistorial.innerHTML += `
+        <tr>
+            <td>👤 ${nombreDisplay}</td>
+            <td>${a.titulo}</td>
+            <td>${a.categoria}</td>
+            <td>${a.fecha}</td>
+            <td>${a.horas.toFixed(2)}h</td>
+            <td><span class="${claseEstado}" style="padding:4px 10px; border-radius:20px; font-size:12px; font-weight:bold;">${a.estado}</span></td>
         </tr>`;
     });
 
-    let totalFiltrado = actividades.filter(a => {
-        let u = a.usuario || "DCumplimiento";
-        return filtro === "todos" || u === filtro;
-    }).length;
-
+    let totalFiltrado = actividades.filter(a => filtro === "todos" || (a.usuario || "DCumplimiento") === filtro).length;
     document.getElementById("total").innerText = totalFiltrado;
     document.getElementById("horas").innerText = horas.toFixed(2) + " hrs";
-    document.getElementById("cumplimiento").innerText =
-        totalFiltrado ? (ok / totalFiltrado * 100).toFixed(0) + "%" : "0%";
-
+    document.getElementById("cumplimiento").innerText = totalFiltrado ? (ok / totalFiltrado * 100).toFixed(0) + "%" : "0%";
     localStorage.setItem("act", JSON.stringify(actividades));
 }
 
 function cambiarEstadoActividad(index, nuevoEstado) {
     actividades[index].estado = nuevoEstado;
-    render();
-    updateCharts();
+    render(); updateCharts();
 }
 
 function eliminarActividad(index) {
     if(confirm("¿Seguro que deseas eliminar esta actividad?")) {
         actividades.splice(index, 1);
-        render();
-        updateCharts();
+        render(); updateCharts();
     }
 }
 
 actividadForm.onsubmit = e => {
     e.preventDefault();
-
     let h1 = hora_inicio.value.split(":");
     let h2 = hora_fin.value.split(":");
-    let horas = (parseInt(h2[0]) + h2[1] / 60) - (parseInt(h1[0]) + h1[1] / 60);
-    
-    if (horas < 0) {
-        alert("La hora de fin no puede ser menor que la hora de inicio");
-        return;
-    }
+    let horas = (parseInt(h2[0]) + h2[1]/60) - (parseInt(h1[0]) + h1[1]/60);
+    if (horas < 0) { alert("La hora de fin no puede ser menor."); return; }
 
-    let asignadoA = usuarioActivo.username;
-    if(usuarioActivo.rol === "admin") {
-        let f = document.getElementById("filtroEmpleado").value;
-        if(f !== "todos") asignadoA = f;
+    // Validación Asignación Cruzada: Si se elige un usuario en el select, le cae a él. Si se deja vacío, se autoasigna.
+    let asignadoA = document.getElementById("asignar_a").value;
+    if (!asignadoA) {
+        asignadoA = usuarioActivo.username;
+        if(usuarioActivo.rol === "admin" && document.getElementById("filtroEmpleado").value !== "todos") {
+            asignadoA = document.getElementById("filtroEmpleado").value;
+        }
     }
 
     actividades.push({
@@ -734,46 +787,29 @@ actividadForm.onsubmit = e => {
         horas: horas,
         estado: estado.value
     });
-
-    actividadForm.reset();
-    render();
-    updateCharts();
+    actividadForm.reset(); render(); updateCharts();
 };
 
-/* REPORTES CON SEMÁFORO DE CRITICIDAD */
+/* REPORTES CRITICIDAD */
 function renderRep(){
-    let t = document.getElementById("tablaReportes");
-    t.innerHTML = "";
-
+    let t = document.getElementById("tablaReportes"); t.innerHTML = "";
     let filtro = usuarioActivo.rol === "admin" ? document.getElementById("filtroEmpleado").value : usuarioActivo.username;
 
     reportes.forEach((r, i) => {
         if (!r.usuario) r.usuario = "DCumplimiento";
         if (filtro !== "todos" && r.usuario !== filtro) return;
 
-        let claseRep = "";
-        if(r.estado === "Abierto") claseRep = "badge-rojo";
-        if(r.estado === "En proceso") claseRep = "badge-amarillo";
-        if(r.estado === "Cerrado") claseRep = "badge-verde";
-
-        // Fallback por si hay reportes viejos sin origen o criticidad
-        let origenDisplay = r.origen || "Anonimo / Externo";
-        let critDisplay = r.criticidad || "Medio";
-        
-        let claseCrit = "badge-crit-medio";
-        if(critDisplay === "Alto") claseCrit = "badge-crit-alto";
-        if(critDisplay === "Bajo") claseCrit = "badge-crit-bajo";
-
+        let claseRep = r.estado === "Abierto" ? "badge-rojo" : r.estado === "En proceso" ? "badge-amarillo" : "badge-verde";
+        let claseCrit = r.criticidad === "Alto" ? "badge-crit-alto" : r.criticidad === "Bajo" ? "badge-crit-bajo" : "badge-crit-medio";
         let deshabilitarSelect = (usuarioActivo.rol !== "admin" && r.usuario !== usuarioActivo.username) ? "disabled" : "";
-        let nombreDisplay = USUARIOS_VALIDOS[r.usuario] ? USUARIOS_VALIDOS[r.usuario].nombre : "Desconocido";
 
         t.innerHTML += `
         <tr>
-            <td style="font-weight:600; color:#1e293b;">👤 ${nombreDisplay}</td>
+            <td>👤 ${USUARIOS_VALIDOS[r.usuario]?.nombre || "Desconocido"}</td>
             <td><strong>${r.titulo}</strong></td>
-            <td style="color:#475569; font-size:14px;">📣 ${origenDisplay}</td>
-            <td><span style="background:#e2e8f0; padding:4px 8px; border-radius:6px; font-size:13px; font-weight:500;">${r.tipo}</span></td>
-            <td><span class="${claseCrit}">${critDisplay}</span></td>
+            <td>📣 ${r.origen || "Anónimo"}</td>
+            <td><span style="background:#e2e8f0; padding:4px 8px; border-radius:6px; font-size:13px;">${r.tipo}</span></td>
+            <td><span class="${claseCrit}">${r.criticidad || "Medio"}</span></td>
             <td>
                 <select class="${claseRep}" onchange="cambiarEstadoReporte(${i}, this.value)" ${deshabilitarSelect}>
                     <option value="Abierto" ${r.estado === "Abierto" ? "selected" : ""}>🚨 Abierto</option>
@@ -781,36 +817,20 @@ function renderRep(){
                     <option value="Cerrado" ${r.estado === "Cerrado" ? "selected" : ""}>✅ Cerrado</option>
                 </select>
             </td>
-            <td>
-                <button class="btn-delete" onclick="eliminarReporte(${i})">🗑️ Borrar</button>
-            </td>
+            <td><button class="btn-delete" onclick="eliminarReporte(${i})">🗑️ Borrar</button></td>
         </tr>`;
     });
-
     localStorage.setItem("rep", JSON.stringify(reportes));
 }
 
-function cambiarEstadoReporte(index, nuevoEstado) {
-    reportes[index].estado = nuevoEstado;
-    renderRep();
-}
-
-function eliminarReporte(index) {
-    if(confirm("¿Seguro que deseas eliminar este reporte?")) {
-        reportes.splice(index, 1);
-        renderRep();
-    }
-}
+function cambiarEstadoReporte(index, nuevoEstado) { reportes[index].estado = nuevoEstado; renderRep(); }
+function eliminarReporte(index) { if(confirm("¿Eliminar?")) { reportes.splice(index, 1); renderRep(); } }
 
 reporteForm.onsubmit = e => {
     e.preventDefault();
-
     let asignadoA = usuarioActivo.username;
-    if(usuarioActivo.rol === "admin") {
-        let f = document.getElementById("filtroEmpleado").value;
-        if(f !== "todos") asignadoA = f;
-    }
-
+    if(usuarioActivo.rol === "admin" && document.getElementById("filtroEmpleado").value !== "todos") asignadoA = document.getElementById("filtroEmpleado").value;
+    
     reportes.push({
         usuario: asignadoA,
         titulo: r_titulo.value,
@@ -820,25 +840,71 @@ reporteForm.onsubmit = e => {
         desc: r_desc.value,
         estado: r_estado.value
     });
-
-    reporteForm.reset();
-    renderRep();
+    reporteForm.reset(); renderRep();
 };
 
-/* LÓGICA DE ACTUALIZACIÓN DE GRÁFICAS */
+/* ASOCIADOS DE NEGOCIOS */
+function renderAsociados() {
+    let t = document.getElementById("tablaAsociados");
+    t.innerHTML = "";
+    let filtro = usuarioActivo.rol === "admin" ? document.getElementById("filtroEmpleado").value : usuarioActivo.username;
+
+    asociados.forEach((asoc, i) => {
+        if (!asoc.usuario) asoc.usuario = "DCumplimiento";
+        if (filtro !== "todos" && asoc.usuario !== filtro) return;
+
+        let claseEst = "";
+        if(asoc.estatus === "En depuración") claseEst = "badge-rojo";
+        if(asoc.estatus === "En revisión y firma") claseEst = "badge-amarillo";
+        if(asoc.estatus === "Listo para enviar") claseEst = "badge-azul";
+        if(asoc.estatus === "Enviado") claseEst = "badge-verde";
+
+        let deshabilitarSelect = (usuarioActivo.rol !== "admin" && asoc.usuario !== usuarioActivo.username) ? "disabled" : "";
+
+        t.innerHTML += `
+        <tr>
+            <td>👤 ${USUARIOS_VALIDOS[asoc.usuario]?.nombre || "Desconocido"}</td>
+            <td><strong>${asoc.nombre}</strong></td>
+            <td>📅 ${asoc.fecha}</td>
+            <td>
+                <select class="${claseEst}" onchange="cambiarEstadoAsociado(${i}, this.value)" ${deshabilitarSelect}>
+                    <option value="En depuración" ${asoc.estatus === "En depuración" ? "selected" : ""}>🔍 En depuración</option>
+                    <option value="En revisión y firma" ${asoc.estatus === "En revisión y firma" ? "selected" : ""}>✍️ En revisión y firma</option>
+                    <option value="Listo para enviar" ${asoc.estatus === "Listo para enviar" ? "selected" : ""}>📦 Listo para enviar</option>
+                    <option value="Enviado" ${asoc.estatus === "Enviado" ? "selected" : ""}>🚀 Enviado</option>
+                </select>
+            </td>
+            <td><button class="btn-delete" onclick="eliminarAsociado(${i})">🗑️ Borrar</button></td>
+        </tr>`;
+    });
+    localStorage.setItem("asoc", JSON.stringify(asociados));
+}
+
+function cambiarEstadoAsociado(index, nuevoEst) { asociados[index].estatus = nuevoEst; renderAsociados(); }
+function eliminarAsociado(index) { if(confirm("¿Eliminar asociado?")) { asociados.splice(index, 1); renderAsociados(); } }
+
+asociadoForm.onsubmit = e => {
+    e.preventDefault();
+    let asignadoA = usuarioActivo.username;
+    if(usuarioActivo.rol === "admin" && document.getElementById("filtroEmpleado").value !== "todos") asignadoA = document.getElementById("filtroEmpleado").value;
+
+    asociados.push({
+        usuario: asignadoA,
+        nombre: asoc_nombre.value,
+        estatus: asoc_estatus.value,
+        fecha: asoc_fecha.value
+    });
+    asociadoForm.reset(); renderAsociados();
+};
+
+/* GRÁFICAS */
 function updateCharts() {
     if (!usuarioActivo) return;
-
     let filtro = usuarioActivo.rol === "admin" ? document.getElementById("filtroEmpleado").value : usuarioActivo.username;
-    
-    let listaFiltrada = actividades.filter(a => {
-        let u = a.usuario || "DCumplimiento";
-        return filtro === "todos" || u === filtro;
-    });
+    let listaFiltrada = actividades.filter(a => filtro === "todos" || (a.usuario || "DCumplimiento") === filtro);
 
     let categorias = ["Seguridad", "Infraestructura", "Ciberseguridad", "Inspecciones", "Auditorías", "Otros"];
     let conteoCategorias = categorias.map(cat => listaFiltrada.filter(a => a.categoria === cat).length);
-
     let completadas = listaFiltrada.filter(a => a.estado === "Completada").length;
     let pendientesEnProceso = listaFiltrada.length - completadas;
 
@@ -847,35 +913,17 @@ function updateCharts() {
         if (myCategoryChart) myCategoryChart.destroy();
         myCategoryChart = new Chart(ctxCat, {
             type: 'doughnut',
-            data: {
-                labels: categorias,
-                datasets: [{
-                    data: conteoCategorias,
-                    backgroundColor: ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#6b7280']
-                }]
-            },
+            data: { labels: categorias, datasets: [{ data: conteoCategorias, backgroundColor: ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#6b7280'] }] },
             options: { responsive: true, maintainAspectRatio: false }
         });
     }
-
     let ctxComp = document.getElementById("complianceChart");
     if(ctxComp) {
         if (myComplianceChart) myComplianceChart.destroy();
         myComplianceChart = new Chart(ctxComp, {
             type: 'bar',
-            data: {
-                labels: ["Completadas", "Pendientes / En Proceso"],
-                datasets: [{
-                    label: 'Cantidad de Actividades',
-                    data: [completadas, pendientesEnProceso],
-                    backgroundColor: ['#10b981', '#f59e0b']
-                }]
-            },
-            options: { 
-                responsive: true, 
-                maintainAspectRatio: false,
-                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-            }
+            data: { labels: ["Completadas", "Pendientes/Proceso"], datasets: [{ label: 'Actividades', data: [completadas, pendientesEnProceso], backgroundColor: ['#10b981', '#f59e0b'] }] },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
         });
     }
 }
