@@ -158,7 +158,7 @@ h2.section-title {
     padding-bottom: 8px;
 }
 
-/* FILTRO SUPER USUARIO */
+/* FILTRO SUPER USUARIO / VÍCTOR TORRES */
 .admin-filter {
     background: #fff;
     padding: 16px 24px;
@@ -327,7 +327,6 @@ table select {
     cursor: pointer;
 }
 
-/* Select para cambiar el responsable en la tabla de forma discreta */
 .select-responsable-tabla {
     background: #f1f5f9 !important;
     border: 1px solid #cbd5e1 !important;
@@ -353,6 +352,16 @@ table select {
     background: var(--sec-red);
     color: white;
     border-color: var(--sec-red);
+}
+
+/* HISTORIAL LOG */
+.log-item {
+    font-size: 13px;
+    padding: 6px 10px;
+    background: #f8fafc;
+    border-left: 3px solid var(--accent-blue);
+    margin-bottom: 4px;
+    border-radius: 0 6px 6px 0;
 }
 
 /* BADGES DE ESTADO, CRITICIDAD Y ASOCIADOS */
@@ -637,8 +646,9 @@ table select {
                     <tr>
                         <th>Responsable Asignado</th>
                         <th>Nombre del Asociado</th>
-                        <th>Fecha</th>
+                        <th>Fecha Inicial</th>
                         <th>Estatus de Negocio</th>
+                        <th>📜 Historial de Trazabilidad</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -660,10 +670,10 @@ table select {
 
 <script>
 const USUARIOS_VALIDOS = {
-    "dcumplimiento": { clave: "admin123", rol: "admin", nombre: "Super Administrador" },
+    "DCumplimiento": { clave: "admin123", rol: "admin", nombre: "Super Administrador" },
     "jgarcia": { clave: "1234", rol: "empleado", nombre: "Joan Garcia" },
     "jhilario": { clave: "1234", rol: "empleado", nombre: "Jhoan Hilario" },
-    "vtorres": { clave: "1234", rol: "empleado", nombre: "Victor Torres" }
+    "vtorres": { clave: "1234", rol: "supervisor", nombre: "Victor Torres" } // Cambiado a ROL SUPERVISOR
 };
 
 let usuarioActivo = JSON.parse(sessionStorage.getItem("sesion_usuario")) || null;
@@ -696,8 +706,12 @@ function verificarSesion() {
         document.getElementById("login-screen").style.display = "none";
         document.getElementById("app-content").style.display = "block";
         document.getElementById("user-display").innerText = `Rol: ${usuarioActivo.nombre}`;
-        document.getElementById("admin-view-selector").style.display = usuarioActivo.rol === "admin" ? "flex" : "none";
-        document.getElementById("welcome-title").innerText = usuarioActivo.rol === "admin" ? "Dashboard Global de Control" : `Dashboard - ${usuarioActivo.nombre}`;
+        
+        // Admin y Víctor Torres (Supervisor) pueden ver el filtro de inspección
+        let puedeSupervisar = usuarioActivo.rol === "admin" || usuarioActivo.rol === "supervisor";
+        document.getElementById("admin-view-selector").style.display = puedeSupervisar ? "flex" : "none";
+        document.getElementById("welcome-title").innerText = puedeSupervisar ? "Dashboard Global de Control" : `Dashboard - ${usuarioActivo.nombre}`;
+        
         render(); renderRep(); renderAsociados(); updateCharts();
     } else {
         document.getElementById("login-screen").style.display = "flex";
@@ -713,7 +727,13 @@ function showSection(id){
     if(id === 'indicadores' || id === 'inicio') updateCharts();
 }
 
-/* ACTIVIDADES CON ASIGNACIÓN CRUZADA E HISTORIAL */
+// Retorna quién se está inspeccionando en los selectores
+function getFiltroUsuario() {
+    let esSupervisorOAdmin = usuarioActivo.rol === "admin" || usuarioActivo.rol === "supervisor";
+    return esSupervisorOAdmin ? document.getElementById("filtroEmpleado").value : usuarioActivo.username;
+}
+
+/* ACTIVIDADES */
 function render(){
     let tabla = document.getElementById("tabla");
     let tablaHistorial = document.getElementById("tablaHistorial");
@@ -721,7 +741,7 @@ function render(){
     tablaHistorial.innerHTML = "";
 
     let horas = 0, ok = 0;
-    let filtro = usuarioActivo.rol === "admin" ? document.getElementById("filtroEmpleado").value : usuarioActivo.username;
+    let filtro = getFiltroUsuario();
 
     actividades.forEach((a, i) => {
         if (!a.usuario) a.usuario = "DCumplimiento";
@@ -731,6 +751,8 @@ function render(){
         if(a.estado === "Completada") ok++;
 
         let claseEstado = a.estado === "Pendiente" ? "badge-rojo" : a.estado === "En proceso" ? "badge-amarillo" : "badge-verde";
+        
+        // CONDICIÓN MÁGICA: Si no eres Admin, y NO eres el dueño real de la línea, se deshabilita (Modo Lectura para Víctor si ve a otros)
         let deshabilitarSelect = (usuarioActivo.rol !== "admin" && a.usuario !== usuarioActivo.username) ? "disabled" : "";
         let nombreDisplay = USUARIOS_VALIDOS[a.usuario] ? USUARIOS_VALIDOS[a.usuario].nombre : "Desconocido";
 
@@ -748,7 +770,9 @@ function render(){
                     <option value="Completada" ${a.estado === "Completada" ? "selected" : ""}>✅ Completada</option>
                 </select>
             </td>
-            <td><button class="btn-delete" onclick="eliminarActividad(${i})">🗑️ Borrar</button></td>
+            <td>
+                <button class="btn-delete" onclick="eliminarActividad(${i})" ${deshabilitarSelect}>🗑️ Borrar</button>
+            </td>
         </tr>`;
 
         tablaHistorial.innerHTML += `
@@ -791,8 +815,9 @@ actividadForm.onsubmit = e => {
     let asignadoA = document.getElementById("asignar_a").value;
     if (!asignadoA) {
         asignadoA = usuarioActivo.username;
-        if(usuarioActivo.rol === "admin" && document.getElementById("filtroEmpleado").value !== "todos") {
-            asignadoA = document.getElementById("filtroEmpleado").value;
+        let filtro = getFiltroUsuario();
+        if((usuarioActivo.rol === "admin" || usuarioActivo.rol === "supervisor") && filtro !== "todos") {
+            asignadoA = filtro;
         }
     }
 
@@ -807,10 +832,10 @@ actividadForm.onsubmit = e => {
     actividadForm.reset(); render(); updateCharts();
 };
 
-/* REPORTES CRITICIDAD */
+/* REPORTES */
 function renderRep(){
     let t = document.getElementById("tablaReportes"); t.innerHTML = "";
-    let filtro = usuarioActivo.rol === "admin" ? document.getElementById("filtroEmpleado").value : usuarioActivo.username;
+    let filtro = getFiltroUsuario();
 
     reportes.forEach((r, i) => {
         if (!r.usuario) r.usuario = "DCumplimiento";
@@ -818,6 +843,8 @@ function renderRep(){
 
         let claseRep = r.estado === "Abierto" ? "badge-rojo" : r.estado === "En proceso" ? "badge-amarillo" : "badge-verde";
         let claseCrit = r.criticidad === "Alto" ? "badge-crit-alto" : r.criticidad === "Bajo" ? "badge-crit-bajo" : r.criticidad === "Medio" ? "badge-crit-medio" : "badge-crit-medio";
+        
+        // Bloqueo de cambios en reportes de otros si es Víctor
         let deshabilitarSelect = (usuarioActivo.rol !== "admin" && r.usuario !== usuarioActivo.username) ? "disabled" : "";
 
         t.innerHTML += `
@@ -834,7 +861,7 @@ function renderRep(){
                     <option value="Cerrado" ${r.estado === "Cerrado" ? "selected" : ""}>✅ Cerrado</option>
                 </select>
             </td>
-            <td><button class="btn-delete" onclick="eliminarReporte(${i})">🗑️ Borrar</button></td>
+            <td><button class="btn-delete" onclick="eliminarReporte(${i})" ${deshabilitarSelect}>🗑️ Borrar</button></td>
         </tr>`;
     });
     localStorage.setItem("rep", JSON.stringify(reportes));
@@ -846,7 +873,8 @@ function eliminarReporte(index) { if(confirm("¿Eliminar?")) { reportes.splice(i
 reporteForm.onsubmit = e => {
     e.preventDefault();
     let asignadoA = usuarioActivo.username;
-    if(usuarioActivo.rol === "admin" && document.getElementById("filtroEmpleado").value !== "todos") asignadoA = document.getElementById("filtroEmpleado").value;
+    let filtro = getFiltroUsuario();
+    if((usuarioActivo.rol === "admin" || usuarioActivo.rol === "supervisor") && filtro !== "todos") asignadoA = filtro;
     
     reportes.push({
         usuario: asignadoA,
@@ -860,16 +888,16 @@ reporteForm.onsubmit = e => {
     reporteForm.reset(); renderRep();
 };
 
-/* ASOCIADOS DE NEGOCIOS CON WORKFLOW/REASIGNACIÓN EN VIVO */
+/* ASOCIADOS DE NEGOCIOS (CON TRAZABILIDAD REGISTRADA Y SEGURIDAD VÍCTOR) */
 function renderAsociados() {
     let t = document.getElementById("tablaAsociados");
     t.innerHTML = "";
-    let filtro = usuarioActivo.rol === "admin" ? document.getElementById("filtroEmpleado").value : usuarioActivo.username;
+    let filtro = getFiltroUsuario();
 
     asociados.forEach((asoc, i) => {
         if (!asoc.usuario) asoc.usuario = "DCumplimiento";
+        if (!asoc.historial) asoc.historial = []; // Por seguridad si no existía el array
         
-        // El Administrador ve todo, los empleados ven solo lo que TIENEN ASIGNADO actualmente
         if (filtro !== "todos" && asoc.usuario !== filtro) return;
 
         let claseEst = "";
@@ -878,8 +906,18 @@ function renderAsociados() {
         if(asoc.estatus === "Listo para enviar") claseEst = "badge-azul";
         if(asoc.estatus === "Enviado") claseEst = "badge-verde";
 
-        // Cualquiera puede reasignar si es dueño actual del registro o es admin
+        // Modo Solo Lectura si Víctor está mirando el flujo de Joan o de Jhoan
         let deshabilitarCampos = (usuarioActivo.rol !== "admin" && asoc.usuario !== usuarioActivo.username) ? "disabled" : "";
+
+        // Renderizar bloque de logs de historial
+        let logsHTML = "";
+        if(asoc.historial.length === 0) {
+            logsHTML = `<em style="color:gray; font-size:12px;">Sin movimientos</em>`;
+        } else {
+            asoc.historial.forEach(h => {
+                logsHTML += `<div class="log-item">📅 <strong>${h.fecha}</strong> - ${h.detalle}</div>`;
+            });
+        }
 
         t.innerHTML += `
         <tr>
@@ -901,21 +939,47 @@ function renderAsociados() {
                     <option value="Enviado" ${asoc.estatus === "Enviado" ? "selected" : ""}>🚀 Enviado</option>
                 </select>
             </td>
-            <td><button class="btn-delete" onclick="eliminarAsociado(${i})">🗑️ Borrar</button></td>
+            <td>
+                <div style="max-height: 120px; overflow-y:auto; border: 1px solid #e2e8f0; padding:6px; border-radius:6px; background:#fff;">
+                    ${logsHTML}
+                </div>
+            </td>
+            <td><button class="btn-delete" onclick="eliminarAsociado(${i})" ${deshabilitarCampos}>🗑️ Borrar</button></td>
         </tr>`;
     });
     localStorage.setItem("asoc", JSON.stringify(asociados));
 }
 
-function cambiarEstadoAsociado(index, nuevoEst) { 
-    asociados[index].estatus = nuevoEst; 
+function cambiarEstadoAsociado(index, nuevoEst) {
+    let viejoEst = asociados[index].estatus;
+    asociados[index].estatus = nuevoEst;
+    
+    // Guardamos log de auditoría
+    let timestamp = new Date().toLocaleString();
+    asociados[index].historial.push({
+        fecha: timestamp,
+        detalle: `Cambio estatus de [${viejoEst}] a [${nuevoEst}] por usuario: ${usuarioActivo.nombre}`
+    });
+
     renderAsociados(); 
 }
 
 function reasignarAsociado(index, nuevoResponsable) {
+    let viejoResp = asociados[index].usuario;
     asociados[index].usuario = nuevoResponsable;
-    alert(`Asociado reasignado con éxito a: ${USUARIOS_VALIDOS[nuevoResponsable].nombre}`);
-    renderAsociados(); // Se refresca la tabla. Si el empleado actual ya no es el dueño, desaparecerá de su vista filtrada.
+    
+    let nombreViejo = USUARIOS_VALIDOS[viejoResp]?.nombre || "Desconocido";
+    let nombreNuevo = USUARIOS_VALIDOS[nuevoResponsable]?.nombre;
+
+    // Guardamos log de auditoría de reasignación
+    let timestamp = new Date().toLocaleString();
+    asociados[index].historial.push({
+        fecha: timestamp,
+        detalle: `Transpasado de [${nombreViejo}] hacia [${nombreNuevo}] por: ${usuarioActivo.nombre}`
+    });
+
+    alert(`Asociado transferido a: ${nombreNuevo}`);
+    renderAsociados();
 }
 
 function eliminarAsociado(index) { if(confirm("¿Eliminar asociado?")) { asociados.splice(index, 1); renderAsociados(); } }
@@ -926,16 +990,22 @@ asociadoForm.onsubmit = e => {
     let asignadoA = document.getElementById("asoc_asignar_a").value;
     if (!asignadoA) {
         asignadoA = usuarioActivo.username;
-        if(usuarioActivo.rol === "admin" && document.getElementById("filtroEmpleado").value !== "todos") {
-            asignadoA = document.getElementById("filtroEmpleado").value;
+        let filtro = getFiltroUsuario();
+        if((usuarioActivo.rol === "admin" || usuarioActivo.rol === "supervisor") && filtro !== "todos") {
+            asignadoA = filtro;
         }
     }
+
+    let timestamp = new Date().toLocaleString();
 
     asociados.push({
         usuario: asignadoA,
         nombre: asoc_nombre.value,
         estatus: asoc_estatus.value,
-        fecha: asoc_fecha.value
+        fecha: asoc_fecha.value,
+        historial: [
+            { fecha: timestamp, detalle: `Registro inicial. Asignado a: ${USUARIOS_VALIDOS[asignadoA].nombre} con estatus: ${asoc_estatus.value}` }
+        ]
     });
     asociadoForm.reset(); renderAsociados();
 };
@@ -943,7 +1013,7 @@ asociadoForm.onsubmit = e => {
 /* GRÁFICAS */
 function updateCharts() {
     if (!usuarioActivo) return;
-    let filtro = usuarioActivo.rol === "admin" ? document.getElementById("filtroEmpleado").value : usuarioActivo.username;
+    let filtro = getFiltroUsuario();
     let listaFiltrada = actividades.filter(a => filtro === "todos" || (a.usuario || "DCumplimiento") === filtro);
 
     let categorias = ["Seguridad", "Infraestructura", "Ciberseguridad", "Inspecciones", "Auditorías", "Otros"];
