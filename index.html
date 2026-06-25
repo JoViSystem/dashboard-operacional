@@ -499,17 +499,19 @@ table select {
                 </select>
             </div>
 
+            <p id="dashboard-date-indicator" style="font-size:14px; font-weight:600; color:var(--accent-blue); margin-top:-15px; margin-bottom:20px;">⏱️ Mostrando métricas del día actual</p>
+
             <div class="cards">
                 <div class="card">
-                    <h3>Total Actividades</h3>
+                    <h3>Carga Total Diaria</h3>
                     <p id="total">0</p>
                 </div>
                 <div class="card">
-                    <h3>Horas Invertidas</h3>
+                    <h3>Horas Totales del Día</h3>
                     <p id="horas">0</p>
                 </div>
                 <div class="card">
-                    <h3>Cumplimiento General</h3>
+                    <h3>Cumplimiento HSE</h3>
                     <p id="cumplimiento">0%</p>
                 </div>
             </div>
@@ -573,8 +575,8 @@ table select {
             <!-- FILTRO DE CALENDARIO PARA TRAZABILIDAD -->
             <div class="calendar-filter-box">
                 <strong>📅 Trazabilidad Diaria (Filtrar por Día Específico):</strong>
-                <input type="date" id="filtroCalendarioDia" onchange="render();">
-                <button type="button" class="btn-reset-date" onclick="limpiarFiltroFecha();">Ver Todas</button>
+                <input type="date" id="filtroCalendarioDia" onchange="ejecutarFiltroGlobal();">
+                <button type="button" class="btn-reset-date" onclick="limpiarFiltroFecha();">Ver Hoy</button>
             </div>
 
             <table>
@@ -653,6 +655,10 @@ table select {
                         <select id="asoc_asignar_a"></select>
                     </div>
                 </div>
+                <div class="form-group-row">
+                    <div><label>⏱️ Hora Inicio Operación</label><input type="time" id="asoc_hora_inicio" required></div>
+                    <div><label>⏱️ Hora Fin Operación</label><input type="time" id="asoc_hora_fin" required></div>
+                </div>
                 <button type="submit">🤝 Registrar Asociado</button>
             </form>
 
@@ -663,6 +669,7 @@ table select {
                         <th>Responsable Asignado</th>
                         <th>Nombre del Asociado</th>
                         <th>Fecha Registro</th>
+                        <th>Tiempo Invertido</th>
                         <th>Estatus Actual</th>
                         <th>Acciones</th>
                     </tr>
@@ -677,6 +684,7 @@ table select {
                     <tr>
                         <th style="background:#0f172a;">📍 ¿Quién lo tiene?</th>
                         <th style="background:#0f172a;">Empresa / Asociado</th>
+                        <th style="background:#0f172a;">Tiempo Invertido</th>
                         <th style="background:#0f172a;">Estatus Actual</th>
                         <th style="background:#0f172a;">📜 Bitácora Histórica de Cambios y Fechas</th>
                     </tr>
@@ -713,6 +721,14 @@ let asociados = JSON.parse(localStorage.getItem("asoc")) || [];
 let myCategoryChart = null;
 let myComplianceChart = null;
 
+function obtenerFechaHoyLocal() {
+    let d = new Date();
+    let yyyy = d.getFullYear();
+    let mm = String(d.getMonth() + 1).padStart(2, '0');
+    let dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+}
+
 function login(e) {
     e.preventDefault();
     let user = document.getElementById("username").value.trim();
@@ -742,6 +758,10 @@ function verificarSesion() {
         document.getElementById("admin-view-selector").style.display = puedeSupervisar ? "flex" : "none";
         document.getElementById("welcome-title").innerText = puedeSupervisar ? "Dashboard Global de Control" : `Dashboard - ${usuarioActivo.nombre}`;
         
+        if(!document.getElementById("filtroCalendarioDia").value){
+            document.getElementById("filtroCalendarioDia").value = obtenerFechaHoyLocal();
+        }
+
         ejecutarFiltroGlobal();
     } else {
         document.getElementById("login-screen").style.display = "flex";
@@ -792,20 +812,33 @@ function showSection(id){
 }
 
 function limpiarFiltroFecha() {
-    document.getElementById("filtroCalendarioDia").value = "";
-    render();
+    document.getElementById("filtroCalendarioDia").value = obtenerFechaHoyLocal();
+    ejecutarFiltroGlobal();
 }
 
-/* ACTIVIDADES */
+/* ACTIVIDADES + LOGICA DE UNIFICACION DE HORAS EN DASHBOARD */
 function render(){
     let tabla = document.getElementById("tabla");
     let tablaHistorial = document.getElementById("tablaHistorial");
     tabla.innerHTML = ""; tablaHistorial.innerHTML = "";
 
-    let horas = 0, ok = 0;
+    let horasDiaActividades = 0, okDia = 0, conteoActividadesDia = 0;
     let filtro = getFiltroUsuario();
-    let filtroDia = document.getElementById("filtroCalendarioDia").value; // YYYY-MM-DD
+    let filtroDia = document.getElementById("filtroCalendarioDia").value;
+    let hoyStr = obtenerFechaHoyLocal();
 
+    let indicadorDashboard = document.getElementById("dashboard-date-indicator");
+    if(indicadorDashboard) {
+        if (filtroDia === hoyStr) {
+            indicadorDashboard.innerText = `⏱️ Mostrando métricas del día de hoy (${filtroDia})`;
+        } else if (filtroDia) {
+            indicadorDashboard.innerText = `🔍 Trazabilidad activa para el día: ${filtroDia}`;
+        } else {
+            indicadorDashboard.innerText = `📋 Mostrando acumulado histórico total`;
+        }
+    }
+
+    // 1. Procesar Actividades HSE estándar
     actividades.forEach((a, i) => {
         if (!a.usuario) a.usuario = "DCumplimiento";
         
@@ -813,32 +846,36 @@ function render(){
         if (usuarioActivo.rol === "supervisor" && filtro === "todos" && a.usuario === "DCumplimiento") return;
         if (filtro !== "todos" && a.usuario !== filtro) return;
 
-        // Filtro dinámico de trazabilidad por calendario
-        if (filtroDia && a.fecha !== filtroDia) return;
+        let coincideConFechaFiltro = (!filtroDia || a.fecha === filtroDia);
 
-        horas += a.horas;
-        if(a.estado === "Completada") ok++;
+        if (coincideConFechaFiltro) {
+            horasDiaActividades += a.horas;
+            conteoActividadesDia++;
+            if(a.estado === "Completada") okDia++;
+        }
 
         let claseEstado = a.estado === "Pendiente" ? "badge-rojo" : a.estado === "En proceso" ? "badge-amarillo" : "badge-verde";
         let deshabilitarSelect = (usuarioActivo.rol !== "admin" && a.usuario !== usuarioActivo.username) ? "disabled" : "";
         let nombreDisplay = USUARIOS_VALIDOS[a.usuario] ? USUARIOS_VALIDOS[a.usuario].nombre : "Desconocido";
 
-        tabla.innerHTML += `
-        <tr>
-            <td style="font-weight:600;">👤 ${nombreDisplay}</td>
-            <td>${a.titulo}</td>
-            <td><span style="background:#f1f5f9; padding:4px 8px; border-radius:6px; font-size:13px;">${a.categoria}</span></td>
-            <td>📅 ${a.fecha}</td>
-            <td style="font-weight:600;">⏱️ ${a.horas.toFixed(2)}h</td>
-            <td>
-                <select class="${claseEstado}" onchange="cambiarEstadoActividad(${i}, this.value)" ${deshabilitarSelect}>
-                    <option value="Pendiente" ${a.estado === "Pendiente" ? "selected" : ""}>⚠️ Pendiente</option>
-                    <option value="En proceso" ${a.estado === "En proceso" ? "selected" : ""}>🔄 En proceso</option>
-                    <option value="Completada" ${a.estado === "Completada" ? "selected" : ""}>✅ Completada</option>
-                </select>
-            </td>
-            <td><button class="btn-delete" onclick="eliminarActividad(${i})" ${deshabilitarSelect}>🗑️ Borrar</button></td>
-        </tr>`;
+        if (coincideConFechaFiltro) {
+            tabla.innerHTML += `
+            <tr>
+                <td style="font-weight:600;">👤 ${nombreDisplay}</td>
+                <td>${a.titulo}</td>
+                <td><span style="background:#f1f5f9; padding:4px 8px; border-radius:6px; font-size:13px;">${a.categoria}</span></td>
+                <td>📅 ${a.fecha}</td>
+                <td style="font-weight:600;">⏱️ ${a.horas.toFixed(2)}h</td>
+                <td>
+                    <select class="${claseEstado}" onchange="cambiarEstadoActividad(${i}, this.value)" ${deshabilitarSelect}>
+                        <option value="Pendiente" ${a.estado === "Pendiente" ? "selected" : ""}>⚠️ Pendiente</option>
+                        <option value="En proceso" ${a.estado === "En proceso" ? "selected" : ""}>🔄 En proceso</option>
+                        <option value="Completada" ${a.estado === "Completada" ? "selected" : ""}>✅ Completada</option>
+                    </select>
+                </td>
+                <td><button class="btn-delete" onclick="eliminarActividad(${i})" ${deshabilitarSelect}>🗑️ Borrar</button></td>
+            </tr>`;
+        }
 
         tablaHistorial.innerHTML += `
         <tr>
@@ -847,15 +884,29 @@ function render(){
         </tr>`;
     });
 
-    let totalFiltrado = actividades.filter(a => {
-        if(usuarioActivo.rol === "supervisor" && a.usuario === "DCumplimiento") return false;
-        if (filtroDia && a.fecha !== filtroDia) return false;
-        return filtro === "todos" || a.usuario === filtro;
-    }).length;
+    // 2. Procesar e integrar horas consumidas por Asociados de Negocios para el día/usuario filtrado
+    let horasDiaAsociados = 0;
+    let conteoAsociadosDia = 0;
+    asociados.forEach(asoc => {
+        if (!asoc.usuario) asoc.usuario = "DCumplimiento";
+        if (usuarioActivo.rol === "supervisor" && asoc.usuario === "DCumplimiento") return;
+        if (filtro !== "todos" && asoc.usuario !== filtro) return;
 
-    document.getElementById("total").innerText = totalFiltrado;
-    document.getElementById("horas").innerText = horas.toFixed(2) + " hrs";
-    document.getElementById("cumplimiento").innerText = totalFiltrado ? (ok / totalFiltrado * 100).toFixed(0) + "%" : "0%";
+        // Comprobación de fecha
+        if (!filtroDia || asoc.fecha === filtroDia) {
+            horasDiaAsociados += (asoc.horas || 0);
+            conteoAsociadosDia++;
+        }
+    });
+
+    // Sumatoria total unificada (Actividades HSE + Tiempos de Asociados)
+    let granTotalHorasDia = horasDiaActividades + horasDiaAsociados;
+    let granTotalCargaObjetos = conteoActividadesDia + conteoAsociadosDia;
+
+    document.getElementById("total").innerText = granTotalCargaObjetos;
+    document.getElementById("horas").innerText = granTotalHorasDia.toFixed(2) + " hrs";
+    document.getElementById("cumplimiento").innerText = conteoActividadesDia ? (okDia / conteoActividadesDia * 100).toFixed(0) + "%" : "100%";
+    
     localStorage.setItem("act", JSON.stringify(actividades));
 }
 
@@ -869,14 +920,13 @@ actividadForm.onsubmit = e => {
     if (horas < 0) { alert("Hora incorrecta."); return; }
 
     let asignadoA = document.getElementById("asignar_a").value || usuarioActivo.username;
-    let fechaBaseStr = fecha.value; // YYYY-MM-DD
+    let fechaBaseStr = fecha.value; 
     let frec = document.getElementById("frecuencia").value;
 
     if (frec === "unica") {
         actividades.push({ usuario: asignadoA, titulo: titulo.value, categoria: categoria.value, fecha: fechaBaseStr, horas: horas, estado: estado.value });
     } 
     else if (frec === "diaria") {
-        // Genera para los siguientes 7 días consecutivos
         let dateObj = new Date(fechaBaseStr + "T00:00:00");
         for (let d = 0; d < 7; d++) {
             let yyyy = dateObj.getFullYear();
@@ -889,7 +939,6 @@ actividadForm.onsubmit = e => {
         }
     } 
     else if (frec === "mensual") {
-        // Genera el mismo día del mes para los próximos 3 meses
         let dateObj = new Date(fechaBaseStr + "T00:00:00");
         for (let m = 0; m < 3; m++) {
             let yyyy = dateObj.getFullYear();
@@ -902,7 +951,7 @@ actividadForm.onsubmit = e => {
         }
     }
 
-    actividadForm.reset(); render(); updateCharts();
+    actividadForm.reset(); ejecutarFiltroGlobal();
 };
 
 /* REPORTES */
@@ -957,12 +1006,15 @@ function renderAsociados() {
     asociados.forEach((asoc, i) => {
         if (!asoc.usuario) asoc.usuario = "DCumplimiento";
         if (!asoc.historial) asoc.historial = [];
+        if (!asoc.horas) asoc.horas = 0;
 
         if (usuarioActivo.rol === "supervisor" && asoc.usuario === "DCumplimiento") return; 
         
         let belongsToFilter = (filtro === "todos" || asoc.usuario === filtro);
         let claseEst = asoc.estatus === "En depuración" ? "badge-rojo" : asoc.estatus === "En revisión y firma" ? "badge-amarillo" : asoc.estatus === "Listo para enviar" ? "badge-azul" : "badge-verde";
         let deshabilitarCampos = (usuarioActivo.rol !== "admin" && asoc.usuario !== usuarioActivo.username) ? "disabled" : "";
+
+        let horasMostrables = typeof asoc.horas === 'number' ? asoc.horas.toFixed(2) : "0.00";
 
         if (belongsToFilter) {
             tActivos.innerHTML += `
@@ -977,6 +1029,7 @@ function renderAsociados() {
                 </td>
                 <td><strong>${asoc.nombre}</strong></td>
                 <td>📅 ${asoc.fecha}</td>
+                <td style="font-weight:700; color:var(--accent-blue);">⏱️ ${horasMostrables}h</td>
                 <td>
                     <select class="${claseEst}" onchange="cambiarEstadoAsociado(${i}, this.value)" ${deshabilitarCampos}>
                         <option value="En depuración" ${asoc.estatus === "En depuración" ? "selected" : ""}>🔍 En depuración</option>
@@ -998,6 +1051,7 @@ function renderAsociados() {
         <tr>
             <td style="font-weight:600; color:var(--sidebar-bg);">👤 ${respNombre}</td>
             <td><strong>${asoc.nombre}</strong></td>
+            <td style="font-weight:600;">⏱️ ${horasMostrables}h</td>
             <td><span class="${claseEst}" style="padding:4px 10px; border-radius:12px; font-size:13px; font-weight:700;">${asoc.estatus}</span></td>
             <td><div class="log-box">${logsHTML}</div></td>
         </tr>`;
@@ -1009,6 +1063,9 @@ function cambiarEstadoAsociado(index, nuevoEst) {
     let viejoEst = asociados[index].estatus;
     asociados[index].estatus = nuevoEst;
     asociados[index].historial.push({ fecha: new Date().toLocaleString(), detalle: `Cambió estatus de [${viejoEst}] a [${nuevoEst}] (Por: ${usuarioActivo.nombre})` });
+    
+    // Al mutar estados de asociados, refrescamos el Dashboard principal para reajustar horas de inmediato
+    render();
     renderAsociados(); 
 }
 
@@ -1016,22 +1073,39 @@ function reasignarAsociado(index, nuevoResponsable) {
     let viejoResp = asociados[index].usuario;
     asociados[index].usuario = nuevoResponsable;
     asociados[index].historial.push({ fecha: new Date().toLocaleString(), detalle: `Traspasado desde [${USUARIOS_VALIDOS[viejoResp]?.nombre || 'Admin'}] hacia [${USUARIOS_VALIDOS[nuevoResponsable].nombre}]` });
+    
+    render();
     renderAsociados();
 }
 
-function eliminarAsociado(index) { if(confirm("¿Eliminar?")) { asociados.splice(index, 1); renderAsociados(); } }
+function eliminarAsociado(index) { if(confirm("¿Eliminar?")) { asociados.splice(index, 1); render(); renderAsociados(); } }
 
 asociadoForm.onsubmit = e => {
     e.preventDefault();
+    
+    // Calcular tiempo invertido en la operación del asociado
+    let h1 = asoc_hora_inicio.value.split(":"); 
+    let h2 = asoc_hora_fin.value.split(":");
+    let horasAsoc = (parseInt(h2[0]) + h2[1]/60) - (parseInt(h1[0]) + h1[1]/60);
+    
+    if (horasAsoc < 0) { 
+        alert("La hora de fin no puede ser menor a la hora de inicio del proceso."); 
+        return; 
+    }
+
     let asignadoA = document.getElementById("asoc_asignar_a").value || usuarioActivo.username;
+    
     asociados.push({
         usuario: asignadoA,
         nombre: asoc_nombre.value,
         estatus: asoc_estatus.value,
         fecha: asoc_fecha.value,
-        historial: [{ fecha: new Date().toLocaleString(), detalle: `Alta de registro. Asignado inicialmente a: ${USUARIOS_VALIDOS[asignadoA].nombre}` }]
+        horas: horasAsoc,
+        historial: [{ fecha: new Date().toLocaleString(), detalle: `Alta de registro (${horasAsoc.toFixed(2)} hrs de gestión). Asignado a: ${USUARIOS_VALIDOS[asignadoA].nombre}` }]
     });
-    asociadoForm.reset(); renderAsociados();
+    
+    asociadoForm.reset(); 
+    ejecutarFiltroGlobal();
 };
 
 /* GRÁFICAS */
