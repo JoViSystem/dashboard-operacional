@@ -19,6 +19,7 @@
     --sec-yellow: #eab308;
     --sec-green: #10b981;
     --sec-red: #ef4444;
+    --sec-azul: #3b82f6;
 }
 
 body {
@@ -158,7 +159,7 @@ h2.section-title {
     padding-bottom: 8px;
 }
 
-/* FILTRO SUPER USUARIO / VÍCTOR TORRES */
+/* FILTRO SUPER USUARIO */
 .admin-filter {
     background: #fff;
     padding: 16px 24px;
@@ -279,10 +280,6 @@ button:hover {
     background: var(--accent-blue-hover);
 }
 
-form button {
-    width: auto;
-}
-
 /* TABLAS */
 table {
     width: 100%;
@@ -354,17 +351,28 @@ table select {
     border-color: var(--sec-red);
 }
 
-/* HISTORIAL LOG */
-.log-item {
-    font-size: 13px;
-    padding: 6px 10px;
+/* HISTORIAL LOGS DENTRO DE TABLAS */
+.log-box {
+    max-height: 120px;
+    overflow-y: auto;
+    border: 1px solid #e2e8f0;
+    padding: 8px;
+    border-radius: 6px;
     background: #f8fafc;
-    border-left: 3px solid var(--accent-blue);
-    margin-bottom: 4px;
-    border-radius: 0 6px 6px 0;
 }
 
-/* BADGES DE ESTADO, CRITICIDAD Y ASOCIADOS */
+.log-item {
+    font-size: 12px;
+    padding: 6px 8px;
+    background: white;
+    border-left: 3px solid var(--accent-blue);
+    margin-bottom: 4px;
+    border-radius: 0 4px 4px 0;
+    line-height: 1.4;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+
+/* BADGES */
 .badge-rojo { background-color: #fee2e2 !important; color: #b91c1c !important; }
 .badge-amarillo { background-color: #fef9c3 !important; color: #a16207 !important; }
 .badge-verde { background-color: #dcfce7 !important; color: #15803d !important; }
@@ -379,7 +387,6 @@ table select {
 .active { display: block; }
 #app-content { display: none; }
 
-/* CONTENEDOR GRÁFICAS */
 .charts-container {
     display: flex;
     gap: 24px;
@@ -410,9 +417,6 @@ table select {
 
 <div id="login-screen" class="login-container">
     <div class="login-card">
-        <div style="text-align: center; margin-bottom: 20px;">
-            <img src="logo-departamento.png" alt="Logo" style="max-width: 160px; height: auto;" onerror="this.style.display='none'">
-        </div>
         <h2>🛡️ Control MC - Ingreso</h2>
         <form id="loginForm" onsubmit="login(event)">
             <input type="text" id="username" placeholder="Usuario" required>
@@ -445,12 +449,8 @@ table select {
 
             <div id="admin-view-selector" class="admin-filter" style="display:none;">
                 <strong>🔍 Filtro de Inspección (Ver datos de):</strong>
-                <select id="filtroEmpleado" onchange="render(); renderRep(); renderAsociados(); updateCharts();">
-                    <option value="todos">-- Todos los Empleados --</option>
-                    <option value="jgarcia">Joan Garcia</option>
-                    <option value="jhilario">Jhoan Hilario</option>
-                    <option value="vtorres">Victor Torres</option>
-                    <option value="DCumplimiento">Super Administrador</option>
+                <select id="filtroEmpleado" onchange="ejecutarFiltroGlobal();">
+                    <!-- Inyección dinámica -->
                 </select>
             </div>
 
@@ -473,10 +473,8 @@ table select {
         <!-- ACTIVIDADES -->
         <div id="actividades" class="section">
             <h1>📋 Gestión de Actividades de Seguridad</h1>
-
             <form id="actividadForm">
                 <input id="titulo" placeholder="Título de la actividad / Tarea de campo" required>
-                
                 <div class="form-group-row">
                     <div>
                         <label>Categoría</label>
@@ -490,17 +488,10 @@ table select {
                         </select>
                     </div>
                     <div>
-                        <label>🎯 Asignar a alguien (Opcional):</label>
-                        <select id="asignar_a">
-                            <option value="">-- Mismo (Asignación propia) --</option>
-                            <option value="jgarcia">Joan Garcia</option>
-                            <option value="jhilario">Jhoan Hilario</option>
-                            <option value="vtorres">Victor Torres</option>
-                            <option value="DCumplimiento">Super Administrador</option>
-                        </select>
+                        <label>🎯 Asignar a:</label>
+                        <select id="asignar_a"></select>
                     </div>
                 </div>
-
                 <input type="date" id="fecha" required>
                 <input type="time" id="hora_inicio" required>
                 <input type="time" id="hora_fin" required>
@@ -509,22 +500,14 @@ table select {
                     <option>En proceso</option>
                     <option>Completada</option>
                 </select>
-                <textarea id="observacion" placeholder="Observaciones de seguridad o notas preventivas"></textarea>
+                <textarea id="observacion" placeholder="Observaciones de seguridad..."></textarea>
                 <button type="submit">💾 Guardar Actividad</button>
             </form>
 
             <h2 class="section-title">Actividades en Curso</h2>
             <table>
                 <thead>
-                    <tr>
-                        <th>Creador / Responsable</th>
-                        <th>Título</th>
-                        <th>Categoría</th>
-                        <th>Fecha</th>
-                        <th>Horas</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
-                    </tr>
+                    <tr><th>Responsable</th><th>Título</th><th>Categoría</th><th>Fecha</th><th>Horas</th><th>Estado</th><th>Acciones</th></tr>
                 </thead>
                 <tbody id="tabla"></tbody>
             </table>
@@ -532,14 +515,7 @@ table select {
             <h2 class="section-title">📂 Historial Completo de Actividades (Archivo)</h2>
             <table>
                 <thead>
-                    <tr>
-                        <th>Responsable</th>
-                        <th>Título</th>
-                        <th>Categoría</th>
-                        <th>Fecha</th>
-                        <th>Horas</th>
-                        <th>Estado Final</th>
-                    </tr>
+                    <tr><th>Responsable</th><th>Título</th><th>Categoría</th><th>Fecha</th><th>Horas</th><th>Estado Final</th></tr>
                 </thead>
                 <tbody id="tablaHistorial"></tbody>
             </table>
@@ -548,55 +524,28 @@ table select {
         <!-- REPORTES -->
         <div id="reportes" class="section">
             <h1>⚠️ Mesa de Control de Reportes Recibidos</h1>
-
             <form id="reporteForm">
                 <div class="form-group-row">
-                    <div>
-                        <label>Título o Anomalía</label>
-                        <input id="r_titulo" placeholder="Ej: Extintor bloqueado" required>
-                    </div>
-                    <div>
-                        <label>Reportado por</label>
-                        <input id="r_origen" placeholder="Ej: Ing. Carlos Mendoza" required>
-                    </div>
+                    <div><label>Título o Anomalía</label><input id="r_titulo" required></div>
+                    <div><label>Reportado por</label><input id="r_origen" required></div>
                 </div>
-
                 <div class="form-group-row">
                     <div>
                         <label>Área</label>
-                        <select id="r_tipo">
-                            <option>Infraestructura</option>
-                            <option>Seguridad</option>
-                            <option>Incidente</option>
-                            <option>Otros</option>
-                        </select>
+                        <select id="r_tipo"><option>Infraestructura</option><option>Seguridad</option><option>Incidente</option><option>Otros</option></select>
                     </div>
                     <div>
                         <label>Nivel de Criticidad</label>
-                        <select id="r_criticidad">
-                            <option value="Bajo">🟢 Bajo</option>
-                            <option value="Medio">🟡 Medio</option>
-                            <option value="Alto">🔴 Alto</option>
-                        </select>
+                        <select id="r_criticidad"><option value="Bajo">🟢 Bajo</option><option value="Medio">🟡 Medio</option><option value="Alto">🔴 Alto</option></select>
                     </div>
                 </div>
-
-                <textarea id="r_desc" placeholder="Detalles de lo reportado..."></textarea>
+                <textarea id="r_desc" placeholder="Detalles..."></textarea>
                 <select id="r_estado"><option>Abierto</option><option>En proceso</option><option>Cerrado</option></select>
                 <button type="submit">🚨 Registrar Reporte</button>
             </form>
-
             <table>
                 <thead>
-                    <tr>
-                        <th>Encargado HSE</th>
-                        <th>Anomalía</th>
-                        <th>Reportado Por</th>
-                        <th>Área</th>
-                        <th>Criticidad</th>
-                        <th>Estatus</th>
-                        <th>Acciones</th>
-                    </tr>
+                    <tr><th>Encargado HSE</th><th>Anomalía</th><th>Reportado Por</th><th>Área</th><th>Criticidad</th><th>Estatus</th><th>Acciones</th></tr>
                 </thead>
                 <tbody id="tablaReportes"></tbody>
             </table>
@@ -613,7 +562,7 @@ table select {
                         <input id="asoc_nombre" placeholder="Ej: Suministros Industriales S.A." required>
                     </div>
                     <div>
-                        <label>Estatus del Proceso</label>
+                        <label>Estatus del Proceso Inicial</label>
                         <select id="asoc_estatus">
                             <option value="En depuración">🔍 En depuración</option>
                             <option value="En revisión y firma">✍️ En revisión y firma</option>
@@ -624,35 +573,44 @@ table select {
                 </div>
                 <div class="form-group-row">
                     <div>
-                        <label>Fecha de Registro / Envío</label>
+                        <label>Fecha de Registro</label>
                         <input type="date" id="asoc_fecha" required>
                     </div>
                     <div>
-                        <label>🎯 Asignar Responsable Inicial:</label>
-                        <select id="asoc_asignar_a">
-                            <option value="">-- Mismo (Asignación propia) --</option>
-                            <option value="jgarcia">Joan Garcia</option>
-                            <option value="jhilario">Jhoan Hilario</option>
-                            <option value="vtorres">Victor Torres</option>
-                            <option value="DCumplimiento">Super Administrador</option>
-                        </select>
+                        <label>🎯 Asignar Responsable:</label>
+                        <select id="asoc_asignar_a"></select>
                     </div>
                 </div>
                 <button type="submit">🤝 Registrar Asociado</button>
             </form>
 
+            <h2 class="section-title">📋 Flujo de Operaciones Activas</h2>
             <table>
                 <thead>
                     <tr>
                         <th>Responsable Asignado</th>
                         <th>Nombre del Asociado</th>
-                        <th>Fecha Inicial</th>
-                        <th>Estatus de Negocio</th>
-                        <th>📜 Historial de Trazabilidad</th>
+                        <th>Fecha Registro</th>
+                        <th>Estatus Actual</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="tablaAsociados"></tbody>
+            </table>
+
+            <!-- VISTA APARTE INDEPENDIENTE: HISTORIAL GLOBAL DE ASOCIADOS -->
+            <h2 class="section-title" style="color: var(--accent-blue);">📂 Vista de Historial Global e Inspección General</h2>
+            <p style="font-size: 14px; margin-top:-5px; color:#64748b;">Muestra unificada del estatus, la persona responsable del asunto en este momento y la bitácora completa de fechas de trabajo.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="background:#0f172a;">📍 ¿Quién lo tiene?</th>
+                        <th style="background:#0f172a;">Empresa / Asociado</th>
+                        <th style="background:#0f172a;">Estatus Actual</th>
+                        <th style="background:#0f172a;">📜 Bitácora Histórica de Cambios y Fechas</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaAsociadosHistorialGlobal"></tbody>
             </table>
         </div>
 
@@ -673,7 +631,7 @@ const USUARIOS_VALIDOS = {
     "DCumplimiento": { clave: "admin123", rol: "admin", nombre: "Super Administrador" },
     "jgarcia": { clave: "1234", rol: "empleado", nombre: "Joan Garcia" },
     "jhilario": { clave: "1234", rol: "empleado", nombre: "Jhoan Hilario" },
-    "vtorres": { clave: "1234", rol: "supervisor", nombre: "Victor Torres" } // Cambiado a ROL SUPERVISOR
+    "vtorres": { clave: "1234", rol: "supervisor", nombre: "Victor Torres" }
 };
 
 let usuarioActivo = JSON.parse(sessionStorage.getItem("sesion_usuario")) || null;
@@ -707,16 +665,51 @@ function verificarSesion() {
         document.getElementById("app-content").style.display = "block";
         document.getElementById("user-display").innerText = `Rol: ${usuarioActivo.nombre}`;
         
-        // Admin y Víctor Torres (Supervisor) pueden ver el filtro de inspección
+        configurarSelectoresPorRol();
+
         let puedeSupervisar = usuarioActivo.rol === "admin" || usuarioActivo.rol === "supervisor";
         document.getElementById("admin-view-selector").style.display = puedeSupervisar ? "flex" : "none";
         document.getElementById("welcome-title").innerText = puedeSupervisar ? "Dashboard Global de Control" : `Dashboard - ${usuarioActivo.nombre}`;
         
-        render(); renderRep(); renderAsociados(); updateCharts();
+        ejecutarFiltroGlobal();
     } else {
         document.getElementById("login-screen").style.display = "flex";
         document.getElementById("app-content").style.display = "none";
     }
+}
+
+function configurarSelectoresPorRol() {
+    let filtroSelect = document.getElementById("filtroEmpleado");
+    let asignaAct = document.getElementById("asignar_a");
+    let asignaAsoc = document.getElementById("asoc_asignar_a");
+
+    let optionsFiltro = `<option value="todos">-- Todos los Empleados --</option>
+                         <option value="jgarcia">Joan Garcia</option>
+                         <option value="jhilario">Jhoan Hilario</option>
+                         <option value="vtorres">Victor Torres</option>`;
+                         
+    let optionsForm = `<option value="">-- Mismo (Asignación propia) --</option>
+                       <option value="jgarcia">Joan Garcia</option>
+                       <option value="jhilario">Jhoan Hilario</option>
+                       <option value="vtorres">Victor Torres</option>`;
+
+    if (usuarioActivo.rol === "admin") {
+        optionsFiltro += `<option value="DCumplimiento">Super Administrador</option>`;
+        optionsForm += `<option value="DCumplimiento">Super Administrador</option>`;
+    }
+
+    filtroSelect.innerHTML = optionsFiltro;
+    asignaAct.innerHTML = optionsForm;
+    asignaAsoc.innerHTML = optionsForm;
+}
+
+function getFiltroUsuario() {
+    let esSupervisorOAdmin = usuarioActivo.rol === "admin" || usuarioActivo.rol === "supervisor";
+    return esSupervisorOAdmin ? document.getElementById("filtroEmpleado").value : usuarioActivo.username;
+}
+
+function ejecutarFiltroGlobal() {
+    render(); renderRep(); renderAsociados(); updateCharts();
 }
 
 function showSection(id){
@@ -727,32 +720,26 @@ function showSection(id){
     if(id === 'indicadores' || id === 'inicio') updateCharts();
 }
 
-// Retorna quién se está inspeccionando en los selectores
-function getFiltroUsuario() {
-    let esSupervisorOAdmin = usuarioActivo.rol === "admin" || usuarioActivo.rol === "supervisor";
-    return esSupervisorOAdmin ? document.getElementById("filtroEmpleado").value : usuarioActivo.username;
-}
-
 /* ACTIVIDADES */
 function render(){
     let tabla = document.getElementById("tabla");
     let tablaHistorial = document.getElementById("tablaHistorial");
-    tabla.innerHTML = "";
-    tablaHistorial.innerHTML = "";
+    tabla.innerHTML = ""; tablaHistorial.innerHTML = "";
 
     let horas = 0, ok = 0;
     let filtro = getFiltroUsuario();
 
     actividades.forEach((a, i) => {
         if (!a.usuario) a.usuario = "DCumplimiento";
+        
+        if (usuarioActivo.rol === "supervisor" && a.usuario === "DCumplimiento") return;
+        if (usuarioActivo.rol === "supervisor" && filtro === "todos" && a.usuario === "DCumplimiento") return;
         if (filtro !== "todos" && a.usuario !== filtro) return;
 
         horas += a.horas;
         if(a.estado === "Completada") ok++;
 
         let claseEstado = a.estado === "Pendiente" ? "badge-rojo" : a.estado === "En proceso" ? "badge-amarillo" : "badge-verde";
-        
-        // CONDICIÓN MÁGICA: Si no eres Admin, y NO eres el dueño real de la línea, se deshabilita (Modo Lectura para Víctor si ve a otros)
         let deshabilitarSelect = (usuarioActivo.rol !== "admin" && a.usuario !== usuarioActivo.username) ? "disabled" : "";
         let nombreDisplay = USUARIOS_VALIDOS[a.usuario] ? USUARIOS_VALIDOS[a.usuario].nombre : "Desconocido";
 
@@ -770,65 +757,38 @@ function render(){
                     <option value="Completada" ${a.estado === "Completada" ? "selected" : ""}>✅ Completada</option>
                 </select>
             </td>
-            <td>
-                <button class="btn-delete" onclick="eliminarActividad(${i})" ${deshabilitarSelect}>🗑️ Borrar</button>
-            </td>
+            <td><button class="btn-delete" onclick="eliminarActividad(${i})" ${deshabilitarSelect}>🗑️ Borrar</button></td>
         </tr>`;
 
         tablaHistorial.innerHTML += `
         <tr>
-            <td>👤 ${nombreDisplay}</td>
-            <td>${a.titulo}</td>
-            <td>${a.categoria}</td>
-            <td>${a.fecha}</td>
-            <td>${a.horas.toFixed(2)}h</td>
+            <td>👤 ${nombreDisplay}</td><td>${a.titulo}</td><td>${a.categoria}</td><td>${a.fecha}</td><td>${a.horas.toFixed(2)}h</td>
             <td><span class="${claseEstado}" style="padding:4px 10px; border-radius:20px; font-size:12px; font-weight:bold;">${a.estado}</span></td>
         </tr>`;
     });
 
-    let totalFiltrado = actividades.filter(a => filtro === "todos" || (a.usuario || "DCumplimiento") === filtro).length;
+    let totalFiltrado = actividades.filter(a => {
+        if(usuarioActivo.rol === "supervisor" && a.usuario === "DCumplimiento") return false;
+        return filtro === "todos" || a.usuario === filtro;
+    }).length;
+
     document.getElementById("total").innerText = totalFiltrado;
     document.getElementById("horas").innerText = horas.toFixed(2) + " hrs";
     document.getElementById("cumplimiento").innerText = totalFiltrado ? (ok / totalFiltrado * 100).toFixed(0) + "%" : "0%";
     localStorage.setItem("act", JSON.stringify(actividades));
 }
 
-function cambiarEstadoActividad(index, nuevoEstado) {
-    actividades[index].estado = nuevoEstado;
-    render(); updateCharts();
-}
-
-function eliminarActividad(index) {
-    if(confirm("¿Seguro que deseas eliminar esta actividad?")) {
-        actividades.splice(index, 1);
-        render(); updateCharts();
-    }
-}
+function cambiarEstadoActividad(index, nuevoEstado) { actividades[index].estado = nuevoEstado; render(); updateCharts(); }
+function eliminarActividad(index) { if(confirm("¿Seguro?")) { actividades.splice(index, 1); render(); updateCharts(); } }
 
 actividadForm.onsubmit = e => {
     e.preventDefault();
-    let h1 = hora_inicio.value.split(":");
-    let h2 = hora_fin.value.split(":");
+    let h1 = hora_inicio.value.split(":"); let h2 = hora_fin.value.split(":");
     let horas = (parseInt(h2[0]) + h2[1]/60) - (parseInt(h1[0]) + h1[1]/60);
-    if (horas < 0) { alert("La hora de fin no puede ser menor."); return; }
+    if (horas < 0) { alert("Hora incorrecta."); return; }
 
-    let asignadoA = document.getElementById("asignar_a").value;
-    if (!asignadoA) {
-        asignadoA = usuarioActivo.username;
-        let filtro = getFiltroUsuario();
-        if((usuarioActivo.rol === "admin" || usuarioActivo.rol === "supervisor") && filtro !== "todos") {
-            asignadoA = filtro;
-        }
-    }
-
-    actividades.push({
-        usuario: asignadoA,
-        titulo: titulo.value,
-        categoria: categoria.value,
-        fecha: fecha.value,
-        horas: horas,
-        estado: estado.value
-    });
+    let asignadoA = document.getElementById("asignar_a").value || usuarioActivo.username;
+    actividades.push({ usuario: asignadoA, titulo: titulo.value, categoria: categoria.value, fecha: fecha.value, horas: horas, estado: estado.value });
     actividadForm.reset(); render(); updateCharts();
 };
 
@@ -839,26 +799,21 @@ function renderRep(){
 
     reportes.forEach((r, i) => {
         if (!r.usuario) r.usuario = "DCumplimiento";
+        if (usuarioActivo.rol === "supervisor" && r.usuario === "DCumplimiento") return;
         if (filtro !== "todos" && r.usuario !== filtro) return;
 
         let claseRep = r.estado === "Abierto" ? "badge-rojo" : r.estado === "En proceso" ? "badge-amarillo" : "badge-verde";
-        let claseCrit = r.criticidad === "Alto" ? "badge-crit-alto" : r.criticidad === "Bajo" ? "badge-crit-bajo" : r.criticidad === "Medio" ? "badge-crit-medio" : "badge-crit-medio";
-        
-        // Bloqueo de cambios en reportes de otros si es Víctor
         let deshabilitarSelect = (usuarioActivo.rol !== "admin" && r.usuario !== usuarioActivo.username) ? "disabled" : "";
 
         t.innerHTML += `
         <tr>
             <td>👤 ${USUARIOS_VALIDOS[r.usuario]?.nombre || "Desconocido"}</td>
-            <td><strong>${r.titulo}</strong></td>
-            <td>📣 ${r.origen || "Anónimo"}</td>
-            <td><span style="background:#e2e8f0; padding:4px 8px; border-radius:6px; font-size:13px;">${r.tipo}</span></td>
-            <td><span class="${claseCrit}">${r.criticidad || "Medio"}</span></td>
+            <td><strong>${r.titulo}</strong></td><td>📣 ${r.origen}</td><td>${r.tipo}</td><td>${r.criticidad}</td>
             <td>
                 <select class="${claseRep}" onchange="cambiarEstadoReporte(${i}, this.value)" ${deshabilitarSelect}>
-                    <option value="Abierto" ${r.estado === "Abierto" ? "selected" : ""}>🚨 Abierto</option>
-                    <option value="En proceso" ${r.estado === "En proceso" ? "selected" : ""}>🔄 En proceso</option>
-                    <option value="Cerrado" ${r.estado === "Cerrado" ? "selected" : ""}>✅ Cerrado</option>
+                    <option value="Abierto" ${r.estado === "Abierto" ? "selected" : ""}>Abierto</option>
+                    <option value="En proceso" ${r.estado === "En proceso" ? "selected" : ""}>En proceso</option>
+                    <option value="Cerrado" ${r.estado === "Cerrado" ? "selected" : ""}>Cerrado</option>
                 </select>
             </td>
             <td><button class="btn-delete" onclick="eliminarReporte(${i})" ${deshabilitarSelect}>🗑️ Borrar</button></td>
@@ -866,85 +821,75 @@ function renderRep(){
     });
     localStorage.setItem("rep", JSON.stringify(reportes));
 }
-
 function cambiarEstadoReporte(index, nuevoEstado) { reportes[index].estado = nuevoEstado; renderRep(); }
 function eliminarReporte(index) { if(confirm("¿Eliminar?")) { reportes.splice(index, 1); renderRep(); } }
 
 reporteForm.onsubmit = e => {
     e.preventDefault();
-    let asignadoA = usuarioActivo.username;
-    let filtro = getFiltroUsuario();
-    if((usuarioActivo.rol === "admin" || usuarioActivo.rol === "supervisor") && filtro !== "todos") asignadoA = filtro;
-    
-    reportes.push({
-        usuario: asignadoA,
-        titulo: r_titulo.value,
-        origen: r_origen.value,
-        tipo: r_tipo.value,
-        criticidad: r_criticidad.value,
-        desc: r_desc.value,
-        estado: r_estado.value
-    });
+    let asignadoA = getFiltroUsuario() !== "todos" ? getFiltroUsuario() : usuarioActivo.username;
+    reportes.push({ usuario: asignadoA, titulo: r_titulo.value, origen: r_origen.value, tipo: r_tipo.value, criticidad: r_criticidad.value, desc: r_desc.value, estado: r_estado.value });
     reporteForm.reset(); renderRep();
 };
 
-/* ASOCIADOS DE NEGOCIOS (CON TRAZABILIDAD REGISTRADA Y SEGURIDAD VÍCTOR) */
+/* ASOCIADOS DE NEGOCIOS */
 function renderAsociados() {
-    let t = document.getElementById("tablaAsociados");
-    t.innerHTML = "";
+    let tActivos = document.getElementById("tablaAsociados");
+    let tHistorialGlobal = document.getElementById("tablaAsociadosHistorialGlobal");
+    
+    tActivos.innerHTML = "";
+    tHistorialGlobal.innerHTML = "";
+    
     let filtro = getFiltroUsuario();
 
     asociados.forEach((asoc, i) => {
         if (!asoc.usuario) asoc.usuario = "DCumplimiento";
-        if (!asoc.historial) asoc.historial = []; // Por seguridad si no existía el array
+        if (!asoc.historial) asoc.historial = [];
+
+        // Ocultación estricta para Víctor (Supervisor)
+        if (usuarioActivo.rol === "supervisor" && asoc.usuario === "DCumplimiento") return; 
         
-        if (filtro !== "todos" && asoc.usuario !== filtro) return;
-
-        let claseEst = "";
-        if(asoc.estatus === "En depuración") claseEst = "badge-rojo";
-        if(asoc.estatus === "En revisión y firma") claseEst = "badge-amarillo";
-        if(asoc.estatus === "Listo para enviar") claseEst = "badge-azul";
-        if(asoc.estatus === "Enviado") claseEst = "badge-verde";
-
-        // Modo Solo Lectura si Víctor está mirando el flujo de Joan o de Jhoan
+        let belongsToFilter = (filtro === "todos" || asoc.usuario === filtro);
+        let claseEst = asoc.estatus === "En depuración" ? "badge-rojo" : asoc.estatus === "En revisión y firma" ? "badge-amarillo" : asoc.estatus === "Listo para enviar" ? "badge-azul" : "badge-verde";
         let deshabilitarCampos = (usuarioActivo.rol !== "admin" && asoc.usuario !== usuarioActivo.username) ? "disabled" : "";
 
-        // Renderizar bloque de logs de historial
-        let logsHTML = "";
-        if(asoc.historial.length === 0) {
-            logsHTML = `<em style="color:gray; font-size:12px;">Sin movimientos</em>`;
-        } else {
-            asoc.historial.forEach(h => {
-                logsHTML += `<div class="log-item">📅 <strong>${h.fecha}</strong> - ${h.detalle}</div>`;
-            });
+        // 1. TABLA FLUJO ACTIVO
+        if (belongsToFilter) {
+            tActivos.innerHTML += `
+            <tr>
+                <td>
+                    <select class="select-responsable-tabla" onchange="reasignarAsociado(${i}, this.value)" ${deshabilitarCampos}>
+                        <option value="jgarcia" ${asoc.usuario === "jgarcia" ? "selected" : ""}>👤 Joan Garcia</option>
+                        <option value="jhilario" ${asoc.usuario === "jhilario" ? "selected" : ""}>👤 Jhoan Hilario</option>
+                        <option value="vtorres" ${asoc.usuario === "vtorres" ? "selected" : ""}>👤 Victor Torres</option>
+                        ${usuarioActivo.rol === 'admin' ? `<option value="DCumplimiento" ${asoc.usuario === "DCumplimiento" ? "selected" : ""}>Super Admin</option>` : ''}
+                    </select>
+                </td>
+                <td><strong>${asoc.nombre}</strong></td>
+                <td>📅 ${asoc.fecha}</td>
+                <td>
+                    <select class="${claseEst}" onchange="cambiarEstadoAsociado(${i}, this.value)" ${deshabilitarCampos}>
+                        <option value="En depuración" ${asoc.estatus === "En depuración" ? "selected" : ""}>🔍 En depuración</option>
+                        <option value="En revisión y firma" ${asoc.estatus === "En revisión y firma" ? "selected" : ""}>✍️ En revisión y firma</option>
+                        <option value="Listo para enviar" ${asoc.estatus === "Listo para enviar" ? "selected" : ""}>📦 Listo para enviar</option>
+                        <option value="Enviado" ${asoc.estatus === "Enviado" ? "selected" : ""}>🚀 Enviado</option>
+                    </select>
+                </td>
+                <td><button class="btn-delete" onclick="eliminarAsociado(${i})" ${deshabilitarCampos}>🗑️ Borrar</button></td>
+            </tr>`;
         }
 
-        t.innerHTML += `
+        // 2. TABLA VISTA DE HISTORIAL GLOBAL
+        let logsHTML = asoc.historial.map(h => `<div class="log-item">⏱️ <strong>${h.fecha}</strong> - ${h.detalle}</div>`).join("");
+        if(!logsHTML) logsHTML = `<em style="color:gray; font-size:12px;">Sin movimientos</em>`;
+
+        let respNombre = USUARIOS_VALIDOS[asoc.usuario]?.nombre || "Desconocido";
+
+        tHistorialGlobal.innerHTML += `
         <tr>
-            <td>
-                <select class="select-responsable-tabla" onchange="reasignarAsociado(${i}, this.value)" ${deshabilitarCampos}>
-                    <option value="jgarcia" ${asoc.usuario === "jgarcia" ? "selected" : ""}>👤 Joan Garcia</option>
-                    <option value="jhilario" ${asoc.usuario === "jhilario" ? "selected" : ""}>👤 Jhoan Hilario</option>
-                    <option value="vtorres" ${asoc.usuario === "vtorres" ? "selected" : ""}>👤 Victor Torres</option>
-                    <option value="DCumplimiento" ${asoc.usuario === "DCumplimiento" ? "selected" : ""}>👤 Super Admin</option>
-                </select>
-            </td>
+            <td style="font-weight:600; color:var(--sidebar-bg);">👤 ${respNombre}</td>
             <td><strong>${asoc.nombre}</strong></td>
-            <td>📅 ${asoc.fecha}</td>
-            <td>
-                <select class="${claseEst}" onchange="cambiarEstadoAsociado(${i}, this.value)" ${deshabilitarCampos}>
-                    <option value="En depuración" ${asoc.estatus === "En depuración" ? "selected" : ""}>🔍 En depuración</option>
-                    <option value="En revisión y firma" ${asoc.estatus === "En revisión y firma" ? "selected" : ""}>✍️ En revisión y firma</option>
-                    <option value="Listo para enviar" ${asoc.estatus === "Listo para enviar" ? "selected" : ""}>📦 Listo para enviar</option>
-                    <option value="Enviado" ${asoc.estatus === "Enviado" ? "selected" : ""}>🚀 Enviado</option>
-                </select>
-            </td>
-            <td>
-                <div style="max-height: 120px; overflow-y:auto; border: 1px solid #e2e8f0; padding:6px; border-radius:6px; background:#fff;">
-                    ${logsHTML}
-                </div>
-            </td>
-            <td><button class="btn-delete" onclick="eliminarAsociado(${i})" ${deshabilitarCampos}>🗑️ Borrar</button></td>
+            <td><span class="${claseEst}" style="padding:4px 10px; border-radius:12px; font-size:13px; font-weight:700;">${asoc.estatus}</span></td>
+            <td><div class="log-box">${logsHTML}</div></td>
         </tr>`;
     });
     localStorage.setItem("asoc", JSON.stringify(asociados));
@@ -953,59 +898,28 @@ function renderAsociados() {
 function cambiarEstadoAsociado(index, nuevoEst) {
     let viejoEst = asociados[index].estatus;
     asociados[index].estatus = nuevoEst;
-    
-    // Guardamos log de auditoría
-    let timestamp = new Date().toLocaleString();
-    asociados[index].historial.push({
-        fecha: timestamp,
-        detalle: `Cambio estatus de [${viejoEst}] a [${nuevoEst}] por usuario: ${usuarioActivo.nombre}`
-    });
-
+    asociados[index].historial.push({ fecha: new Date().toLocaleString(), detalle: `Cambió estatus de [${viejoEst}] a [${nuevoEst}] (Por: ${usuarioActivo.nombre})` });
     renderAsociados(); 
 }
 
 function reasignarAsociado(index, nuevoResponsable) {
     let viejoResp = asociados[index].usuario;
     asociados[index].usuario = nuevoResponsable;
-    
-    let nombreViejo = USUARIOS_VALIDOS[viejoResp]?.nombre || "Desconocido";
-    let nombreNuevo = USUARIOS_VALIDOS[nuevoResponsable]?.nombre;
-
-    // Guardamos log de auditoría de reasignación
-    let timestamp = new Date().toLocaleString();
-    asociados[index].historial.push({
-        fecha: timestamp,
-        detalle: `Transpasado de [${nombreViejo}] hacia [${nombreNuevo}] por: ${usuarioActivo.nombre}`
-    });
-
-    alert(`Asociado transferido a: ${nombreNuevo}`);
+    asociados[index].historial.push({ fecha: new Date().toLocaleString(), detalle: `Traspasado desde [${USUARIOS_VALIDOS[viejoResp]?.nombre || 'Admin'}] hacia [${USUARIOS_VALIDOS[nuevoResponsable].nombre}]` });
     renderAsociados();
 }
 
-function eliminarAsociado(index) { if(confirm("¿Eliminar asociado?")) { asociados.splice(index, 1); renderAsociados(); } }
+function eliminarAsociado(index) { if(confirm("¿Eliminar?")) { asociados.splice(index, 1); renderAsociados(); } }
 
 asociadoForm.onsubmit = e => {
     e.preventDefault();
-    
-    let asignadoA = document.getElementById("asoc_asignar_a").value;
-    if (!asignadoA) {
-        asignadoA = usuarioActivo.username;
-        let filtro = getFiltroUsuario();
-        if((usuarioActivo.rol === "admin" || usuarioActivo.rol === "supervisor") && filtro !== "todos") {
-            asignadoA = filtro;
-        }
-    }
-
-    let timestamp = new Date().toLocaleString();
-
+    let asignadoA = document.getElementById("asoc_assignar_a").value || usuarioActivo.username;
     asociados.push({
         usuario: asignadoA,
         nombre: asoc_nombre.value,
         estatus: asoc_estatus.value,
         fecha: asoc_fecha.value,
-        historial: [
-            { fecha: timestamp, detalle: `Registro inicial. Asignado a: ${USUARIOS_VALIDOS[asignadoA].nombre} con estatus: ${asoc_estatus.value}` }
-        ]
+        historial: [{ fecha: new Date().toLocaleString(), detalle: `Alta de registro. Asignado inicialmente a: ${USUARIOS_VALIDOS[asignadoA].nombre}` }]
     });
     asociadoForm.reset(); renderAsociados();
 };
@@ -1014,7 +928,10 @@ asociadoForm.onsubmit = e => {
 function updateCharts() {
     if (!usuarioActivo) return;
     let filtro = getFiltroUsuario();
-    let listaFiltrada = actividades.filter(a => filtro === "todos" || (a.usuario || "DCumplimiento") === filtro);
+    let listaFiltrada = actividades.filter(a => {
+        if(usuarioActivo.rol === "supervisor" && a.usuario === "DCumplimiento") return false;
+        return filtro === "todos" || a.usuario === filtro;
+    });
 
     let categorias = ["Seguridad", "Infraestructura", "Ciberseguridad", "Inspecciones", "Auditorías", "Otros"];
     let conteoCategorias = categorias.map(cat => listaFiltrada.filter(a => a.categoria === cat).length);
@@ -1026,7 +943,7 @@ function updateCharts() {
         if (myCategoryChart) myCategoryChart.destroy();
         myCategoryChart = new Chart(ctxCat, {
             type: 'doughnut',
-            data: { labels: Nav = categorias, datasets: [{ data: conteoCategorias, backgroundColor: ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#6b7280'] }] },
+            data: { labels: categorias, datasets: [{ data: conteoCategorias, backgroundColor: ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#6b7280'] }] },
             options: { responsive: true, maintainAspectRatio: false }
         });
     }
@@ -1036,7 +953,7 @@ function updateCharts() {
         myComplianceChart = new Chart(ctxComp, {
             type: 'bar',
             data: { labels: ["Completadas", "Pendientes/Proceso"], datasets: [{ label: 'Actividades', data: [completadas, pendientesEnProceso], backgroundColor: ['#10b981', '#f59e0b'] }] },
-            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+            options: { responsive: true, maintainAspectRatio: false }
         });
     }
 }
