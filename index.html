@@ -3,9 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Compliance & Continuous Improvement System</title>
+<title>Control de Cumplimiento</title>
 
-<!-- Cargamos Chart.js para los Indicadores -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
@@ -48,71 +47,85 @@ body {
 
 .login-card {
     background: white;
-    padding: 40px;
+    padding: 45px 40px;
     border-radius: 16px;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
     width: 100%;
-    max-width: 400px;
+    max-width: 420px;
 }
 
+/* Cambios solicitados en Login */
 .login-card h2 {
     margin-top: 0;
-    margin-bottom: 24px;
+    margin-bottom: 8px;
     text-align: center;
     color: var(--sidebar-bg);
-    font-size: 24px;
-    font-weight: 700;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+.login-card p.subtitle {
+    text-align: center;
+    color: #64748b;
+    font-size: 14px;
+    margin-top: 0;
+    margin-bottom: 32px;
+    font-weight: 500;
 }
 
 /* SIDEBAR */
 .sidebar {
-    width: 260px;
+    width: 280px;
     height: 100vh;
     position: fixed;
     background: var(--sidebar-bg);
     color: white;
-    padding: 24px;
+    padding: 28px 20px;
     box-sizing: border-box;
     box-shadow: 4px 0 10px rgba(0,0,0,0.1);
     overflow-y: auto;
 }
 
+/* Cambios solicitados en Sidebar Interno */
 .sidebar h2 {
-    font-size: 20px;
+    font-size: 21px;
     margin-top: 0;
-    margin-bottom: 5px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
     color: white;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
 }
 
 .sidebar .user-info {
     font-size: 13px;
     color: var(--text-muted);
-    margin-bottom: 24px;
-    padding-bottom: 12px;
+    margin-bottom: 28px;
+    padding-bottom: 14px;
     border-bottom: 1px solid #334155;
+    font-weight: 500;
 }
 
 .sidebar a {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     color: #cbd5e1;
     text-decoration: none;
     padding: 12px 14px;
-    font-size: 15px;
+    font-size: 14px;
     border-radius: 8px;
     margin-bottom: 6px;
     cursor: pointer;
     transition: all 0.2s ease;
+    font-weight: 500;
 }
 
 .sidebar a:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.06);
     color: white;
 }
 
@@ -120,14 +133,16 @@ body {
     background: var(--accent-blue);
     color: white;
     font-weight: 600;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
 }
 
 .btn-logout {
     background: #451a03 !important;
     color: #f97316 !important;
-    margin-top: 20px;
+    margin-top: 24px;
     font-weight: 600;
     border: 1px solid #7c2d12 !important;
+    justify-content: center;
 }
 
 .btn-logout:hover {
@@ -137,7 +152,7 @@ body {
 
 /* MAIN CONTENT */
 .main {
-    margin-left: 260px;
+    margin-left: 280px;
     padding: 40px;
     box-sizing: border-box;
 }
@@ -378,10 +393,6 @@ table select {
 .badge-verde { background-color: #dcfce7 !important; color: #15803d !important; }
 .badge-azul { background-color: #dbeafe !important; color: #1e40af !important; }
 
-.badge-crit-alto { background: #b91c1c; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; }
-.badge-crit-medio { background: #d97706; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; }
-.badge-crit-bajo { background: #059669; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; }
-
 /* SECCIONES */
 .section { display: none; }
 .active { display: block; }
@@ -417,7 +428,8 @@ table select {
 
 <div id="login-screen" class="login-container">
     <div class="login-card">
-        <h2>🛡️ Control MC - Ingreso</h2>
+        <h2>🛡️ Control de Cumplimiento</h2>
+        <p class="subtitle">Sistema de Monitoreo & Continuidad HSE</p>
         <form id="loginForm" onsubmit="login(event)">
             <input type="text" id="username" placeholder="Usuario" required>
             <input type="password" id="password" placeholder="Contraseña" required>
@@ -429,7 +441,7 @@ table select {
 <div id="app-content">
 
     <div class="sidebar">
-        <h2>⚙️ Control MC</h2>
+        <h2>🛡️ Control de Cumplimiento</h2>
         <div class="user-info" id="user-display">Usuario: En línea</div>
 
         <a id="menu-inicio" onclick="showSection('inicio')" class="active-menu">📊 Inicio (Dashboard)</a>
@@ -443,15 +455,13 @@ table select {
 
     <div class="main">
 
-        <!-- DASHBOARD -->
         <div id="inicio" class="section active">
             <h1 id="welcome-title">Dashboard General</h1>
 
             <div id="admin-view-selector" class="admin-filter" style="display:none;">
                 <strong>🔍 Filtro de Inspección (Ver datos de):</strong>
                 <select id="filtroEmpleado" onchange="ejecutarFiltroGlobal();">
-                    <!-- Inyección dinámica -->
-                </select>
+                    </select>
             </div>
 
             <div class="cards">
@@ -470,7 +480,6 @@ table select {
             </div>
         </div>
 
-        <!-- ACTIVIDADES -->
         <div id="actividades" class="section">
             <h1>📋 Gestión de Actividades de Seguridad</h1>
             <form id="actividadForm">
@@ -521,7 +530,6 @@ table select {
             </table>
         </div>
 
-        <!-- REPORTES -->
         <div id="reportes" class="section">
             <h1>⚠️ Mesa de Control de Reportes Recibidos</h1>
             <form id="reporteForm">
@@ -551,7 +559,6 @@ table select {
             </table>
         </div>
 
-        <!-- ASOCIADOS DE NEGOCIOS -->
         <div id="asociados" class="section">
             <h1>🤝 Gestión de Asociados de Negocios</h1>
             
@@ -598,7 +605,6 @@ table select {
                 <tbody id="tablaAsociados"></tbody>
             </table>
 
-            <!-- VISTA APARTE INDEPENDIENTE: HISTORIAL GLOBAL DE ASOCIADOS -->
             <h2 class="section-title" style="color: var(--accent-blue);">📂 Vista de Historial Global e Inspección General</h2>
             <p style="font-size: 14px; margin-top:-5px; color:#64748b;">Muestra unificada del estatus, la persona responsable del asunto en este momento y la bitácora completa de fechas de trabajo.</p>
             <table>
@@ -614,7 +620,6 @@ table select {
             </table>
         </div>
 
-        <!-- INDICADORES -->
         <div id="indicadores" class="section">
             <h1>📈 Indicadores Estadísticos HSE</h1>
             <div class="charts-container">
@@ -753,7 +758,7 @@ function render(){
             <td>
                 <select class="${claseEstado}" onchange="cambiarEstadoActividad(${i}, this.value)" ${deshabilitarSelect}>
                     <option value="Pendiente" ${a.estado === "Pendiente" ? "selected" : ""}>⚠️ Pendiente</option>
-                    <option value="En proceso" ${a.estado === "En proceso" ? "selected" : ""}>🔄 En proceso</option>
+                    <option value="En proceso" ${a.estado === "En process" ? "selected" : "" || a.estado === "En proceso" ? "selected" : ""}>🔄 En proceso</option>
                     <option value="Completada" ${a.estado === "Completada" ? "selected" : ""}>✅ Completada</option>
                 </select>
             </td>
@@ -845,7 +850,6 @@ function renderAsociados() {
         if (!asoc.usuario) asoc.usuario = "DCumplimiento";
         if (!asoc.historial) asoc.historial = [];
 
-        // Ocultación estricta para Víctor (Supervisor)
         if (usuarioActivo.rol === "supervisor" && asoc.usuario === "DCumplimiento") return; 
         
         let belongsToFilter = (filtro === "todos" || asoc.usuario === filtro);
