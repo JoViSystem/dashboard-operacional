@@ -406,7 +406,7 @@ table select {
 <div id="app-content">
 
     <div class="sidebar">
-        <h2>⚙️ Control MC</h2>
+        <h2>⚙️ Cumplimiento Control</h2>
         <div class="user-info" id="user-display">Usuario: En línea</div>
 
         <a id="menu-inicio" onclick="showSection('inicio')" class="active-menu">📊 Inicio (Dashboard)</a>
@@ -608,6 +608,16 @@ table select {
                         <label>Fecha de Registro / Envío</label>
                         <input type="date" id="asoc_fecha" required>
                     </div>
+                    <div>
+                        <label>🎯 Asignar Responsable (Opcional):</label>
+                        <select id="asoc_asignar_a">
+                            <option value="">-- Mismo (Asignación propia) --</option>
+                            <option value="jgarcia">Joan Garcia</option>
+                            <option value="jhilario">Jhoan Hilario</option>
+                            <option value="vtorres">Victor Torres</option>
+                            <option value="DCumplimiento">Super Administrador</option>
+                        </select>
+                    </div>
                 </div>
                 <button type="submit">🤝 Registrar Asociado</button>
             </form>
@@ -615,7 +625,7 @@ table select {
             <table>
                 <thead>
                     <tr>
-                        <th>Registrado Por</th>
+                        <th>Asignado A / Responsable</th>
                         <th>Nombre del Asociado</th>
                         <th>Fecha</th>
                         <th>Estatus de Negocio</th>
@@ -640,7 +650,7 @@ table select {
 
 <script>
 const USUARIOS_VALIDOS = {
-    "DCumplimiento": { clave: "admin123", rol: "admin", nombre: "Super Administrador" },
+    "dcumplimiento": { clave: "admin123", rol: "admin", nombre: "Super Administrador" },
     "jgarcia": { clave: "1234", rol: "empleado", nombre: "Joan Garcia" },
     "jhilario": { clave: "1234", rol: "empleado", nombre: "Jhoan Hilario" },
     "vtorres": { clave: "1234", rol: "empleado", nombre: "Victor Torres" }
@@ -714,7 +724,6 @@ function render(){
         let deshabilitarSelect = (usuarioActivo.rol !== "admin" && a.usuario !== usuarioActivo.username) ? "disabled" : "";
         let nombreDisplay = USUARIOS_VALIDOS[a.usuario] ? USUARIOS_VALIDOS[a.usuario].nombre : "Desconocido";
 
-        // 1. Tabla Principal de Gestión Activa
         tabla.innerHTML += `
         <tr>
             <td style="font-weight:600;">👤 ${nombreDisplay}</td>
@@ -732,7 +741,6 @@ function render(){
             <td><button class="btn-delete" onclick="eliminarActividad(${i})">🗑️ Borrar</button></td>
         </tr>`;
 
-        // 2. Tabla de Historial Permanente (Abajo)
         tablaHistorial.innerHTML += `
         <tr>
             <td>👤 ${nombreDisplay}</td>
@@ -770,7 +778,6 @@ actividadForm.onsubmit = e => {
     let horas = (parseInt(h2[0]) + h2[1]/60) - (parseInt(h1[0]) + h1[1]/60);
     if (horas < 0) { alert("La hora de fin no puede ser menor."); return; }
 
-    // Validación Asignación Cruzada: Si se elige un usuario en el select, le cae a él. Si se deja vacío, se autoasigna.
     let asignadoA = document.getElementById("asignar_a").value;
     if (!asignadoA) {
         asignadoA = usuarioActivo.username;
@@ -800,7 +807,7 @@ function renderRep(){
         if (filtro !== "todos" && r.usuario !== filtro) return;
 
         let claseRep = r.estado === "Abierto" ? "badge-rojo" : r.estado === "En proceso" ? "badge-amarillo" : "badge-verde";
-        let claseCrit = r.criticidad === "Alto" ? "badge-crit-alto" : r.criticidad === "Bajo" ? "badge-crit-bajo" : "badge-crit-medio";
+        let claseCrit = r.criticidad === "Alto" ? "badge-crit-alto" : r.criticidad === "Bajo" ? "badge-crit-bajo" : r.criticidad === "Medio" ? "badge-crit-medio" : "badge-crit-medio";
         let deshabilitarSelect = (usuarioActivo.rol !== "admin" && r.usuario !== usuarioActivo.username) ? "disabled" : "";
 
         t.innerHTML += `
@@ -843,7 +850,7 @@ reporteForm.onsubmit = e => {
     reporteForm.reset(); renderRep();
 };
 
-/* ASOCIADOS DE NEGOCIOS */
+/* ASOCIADOS DE NEGOCIOS CON ASIGNACIÓN */
 function renderAsociados() {
     let t = document.getElementById("tablaAsociados");
     t.innerHTML = "";
@@ -860,10 +867,11 @@ function renderAsociados() {
         if(asoc.estatus === "Enviado") claseEst = "badge-verde";
 
         let deshabilitarSelect = (usuarioActivo.rol !== "admin" && asoc.usuario !== usuarioActivo.username) ? "disabled" : "";
+        let nombreDisplay = USUARIOS_VALIDOS[asoc.usuario] ? USUARIOS_VALIDOS[asoc.usuario].nombre : "Desconocido";
 
         t.innerHTML += `
         <tr>
-            <td>👤 ${USUARIOS_VALIDOS[asoc.usuario]?.nombre || "Desconocido"}</td>
+            <td style="font-weight:600;">👤 ${nombreDisplay}</td>
             <td><strong>${asoc.nombre}</strong></td>
             <td>📅 ${asoc.fecha}</td>
             <td>
@@ -885,8 +893,14 @@ function eliminarAsociado(index) { if(confirm("¿Eliminar asociado?")) { asociad
 
 asociadoForm.onsubmit = e => {
     e.preventDefault();
-    let asignadoA = usuarioActivo.username;
-    if(usuarioActivo.rol === "admin" && document.getElementById("filtroEmpleado").value !== "todos") asignadoA = document.getElementById("filtroEmpleado").value;
+    
+    let asignadoA = document.getElementById("asoc_asignar_a").value;
+    if (!asignadoA) {
+        asignadoA = usuarioActivo.username;
+        if(usuarioActivo.rol === "admin" && document.getElementById("filtroEmpleado").value !== "todos") {
+            asignadoA = document.getElementById("filtroEmpleado").value;
+        }
+    }
 
     asociados.push({
         usuario: asignadoA,
@@ -913,7 +927,7 @@ function updateCharts() {
         if (myCategoryChart) myCategoryChart.destroy();
         myCategoryChart = new Chart(ctxCat, {
             type: 'doughnut',
-            data: { labels: categorias, datasets: [{ data: conteoCategorias, backgroundColor: ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#6b7280'] }] },
+            data: { labels: Nav = categorias, datasets: [{ data: conteoCategorias, backgroundColor: ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#6b7280'] }] },
             options: { responsive: true, maintainAspectRatio: false }
         });
     }
