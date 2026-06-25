@@ -356,6 +356,18 @@ h2.section-title {
     color: var(--sidebar-bg);
 }
 
+/* NOTIFICACIONES EN DASHBOARD */
+.dashboard-alert-box {
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    border-left: 5px solid var(--sec-red);
+}
+.dashboard-alert-box h4 { margin: 0 0 8px 0; color: #1e293b; font-size: 16px; }
+.dashboard-alert-box ul { margin: 0; padding-left: 20px; font-size: 14px; color: #475569; }
+
 /* FORMULARIOS */
 form {
     background: white;
@@ -556,43 +568,24 @@ table select {
         <a id="menu-actividades" onclick="showSection('actividades')">📋 Actividades</a>
         <a id="menu-reportes" onclick="showSection('reportes')">⚠️ Control de Reportes</a>
         <a id="menu-inducciones" onclick="showSection('inducciones')">🎓 Inducciones de Seguridad</a>
-        <a id="menu-indicadores" onclick="showSection('indicadores')">📈 Indicadores</a>
         <a id="menu-asociados" onclick="showSection('asociados')">🤝 Asociados de Negocios</a>
+        <a id="menu-pizzarras" onclick="showSection('pizzarras')">🚨 Pizarras de Accidentabilidad</a>
         
         <a onclick="logout()" class="btn-logout">🚪 Cerrar Sesión</a>
     </div>
 
     <div class="main">
 
+        <!-- DASHBOARD INICIO -->
         <div id="inicio" class="section active">
             <h1 id="welcome-title">Dashboard General</h1>
 
-            <h2 style="font-size:15px; text-transform:uppercase; color:var(--text-dark); margin-top:-10px; margin-bottom:15px; letter-spacing:0.5px;">🚨 Pizarra de Accidentabilidad (Horas-Hombre Seguras)</h2>
-            <div class="pizarra-container">
-                <div class="pizarra-card" id="pizarra-notions">
-                    <h4>Notions Dominicana</h4>
-                    <p class="metric-hours" id="acc-hours-notions">0.0 h</p>
-                    <div class="details">
-                        <span id="acc-staff-notions">Personal: 0</span>
-                        <span id="acc-status-notions">🟢 Operación Segura</span>
-                    </div>
-                </div>
-                <div class="pizarra-card" id="pizarra-now">
-                    <h4>Now Logistics</h4>
-                    <p class="metric-hours" id="acc-hours-now">0.0 h</p>
-                    <div class="details">
-                        <span id="acc-staff-now">Personal: 0</span>
-                        <span id="acc-status-now">🟢 Operación Segura</span>
-                    </div>
-                </div>
-                <div class="pizarra-card" id="pizarra-gtg">
-                    <h4>GTG</h4>
-                    <p class="metric-hours" id="acc-hours-gtg">0.0 h</p>
-                    <div class="details">
-                        <span id="acc-staff-gtg">Personal: 0</span>
-                        <span id="acc-status-gtg">🟢 Operación Segura</span>
-                    </div>
-                </div>
+            <!-- PANEL DE EXCEPCIONES/ALERTAS EJECUTIVAS -->
+            <div class="dashboard-alert-box" id="panel-alertas-dashboard">
+                <h4>🔔 Resumen Operativo de Seguridad:</h4>
+                <ul id="lista-alertas-dashboard">
+                    <li>Cargando estado actual del sistema...</li>
+                </ul>
             </div>
 
             <div id="admin-view-selector" class="admin-filter" style="display:none;">
@@ -618,35 +611,17 @@ table select {
                 </div>
             </div>
 
-            <h2 class="section-title">✍️ Carga Manual de Métricas de Planta (Calculadora SST)</h2>
-            <form id="pizarraForm" onsubmit="actualizarPizarraManual(event)">
-                <div class="form-group-row">
-                    <div>
-                        <label>Seleccionar Empresa</label>
-                        <select id="piz_empresa">
-                            <option value="notions">Notions Dominicana</option>
-                            <option value="now">Now Logistics</option>
-                            <option value="gtg">GTG</option>
-                        </select>
-                    </div>
-                    <div><label>Cantidad de Empleados Activos</label><input type="number" id="piz_empleados" min="0" required></div>
-                </div>
-                <div class="form-group-row">
-                    <div><label>Horas Promedio Trabajadas por Empleado</label><input type="number" id="piz_horas_emp" min="0" step="0.1" required></div>
-                    <div>
-                        <label>💥 ¿Se registró algún accidente de trabajo?</label>
-                        <select id="piz_accidente">
-                            <option value="no">🟢 No (Sumar Horas Impecables)</option>
-                            <option value="si">🔴 SÍ (Reiniciar Contador a 0)</option>
-                        </select>
-                    </div>
-                </div>
-                <button type="submit" style="background:var(--sidebar-bg);">Afectar Indicador de Empresa</button>
-            </form>
+            <!-- GRÁFICAS INTEGRADAS EN EL DASHBOARD -->
+            <h2 class="section-title">📊 Estado Analítico del Día</h2>
+            <div class="charts-container">
+                <div class="chart-box"><h3>Distribución por Categorías</h3><div style="position: relative; height:220px;"><canvas id="categoryChart"></canvas></div></div>
+                <div class="chart-box"><h3>Estado de Cumplimiento</h3><div style="position: relative; height:220px;"><canvas id="complianceChart"></canvas></div></div>
+            </div>
 
-            <button class="btn-export-pdf" onclick="window.print()">📄 Exportar Reporte Ejecutivo del Día (PDF)</button>
+            <button class="btn-export-pdf" onclick="window.print()" style="margin-top:25px;">📄 Exportar Reporte Ejecutivo del Día (PDF)</button>
         </div>
 
+        <!-- ACTIVIDADES -->
         <div id="actividades" class="section">
             <h1>📋 Gestión de Actividades de Seguridad</h1>
             
@@ -719,6 +694,7 @@ table select {
             </table>
         </div>
 
+        <!-- REPORTES -->
         <div id="reportes" class="section">
             <h1>⚠️ Mesa de Control de Reportes Recibidos</h1>
             <form id="reporteForm">
@@ -749,6 +725,7 @@ table select {
             </table>
         </div>
 
+        <!-- INDUCCIONES -->
         <div id="inducciones" class="section">
             <h1>👷 Módulo de Inducciones de Seguridad Industrial</h1>
             <form id="induccionForm" onsubmit="guardarInduccion(event)">
@@ -784,6 +761,7 @@ table select {
             </table>
         </div>
 
+        <!-- ASOCIADOS -->
         <div id="asociados" class="section">
             <h1>🤝 Gestión de Asociados de Negocios</h1>
             <form id="asociadoForm">
@@ -817,12 +795,63 @@ table select {
             </table>
         </div>
 
-        <div id="indicadores" class="section">
-            <h1>📈 Indicadores Estadísticos HSE</h1>
-            <div class="charts-container">
-                <div class="chart-box"><h3>Distribución por Categorías</h3><div style="position: relative; height:220px;"><canvas id="categoryChart"></canvas></div></div>
-                <div class="chart-box"><h3>Estado de Cumplimiento</h3><div style="position: relative; height:220px;"><canvas id="complianceChart"></canvas></div></div>
+        <!-- SECCIÓN INDEPENDIENTE: PIZARRAS DE ACCIDENTABILIDAD -->
+        <div id="pizzarras" class="section">
+            <h1>🚨 Pizarras de Accidentabilidad (Horas-Hombre Seguras)</h1>
+            <p style="color:var(--text-dark); margin-top:-10px; margin-bottom:25px;">Monitoreo y cálculo de tiempo acumulado sin incidentes incapacitantes por empresa.</p>
+            
+            <div class="pizarra-container">
+                <div class="pizarra-card" id="pizarra-notions">
+                    <h4>Notions Dominicana</h4>
+                    <p class="metric-hours" id="acc-hours-notions">0.0 h</p>
+                    <div class="details">
+                        <span id="acc-staff-notions">Personal: 0</span>
+                        <span id="acc-status-notions">🟢 Operación Segura</span>
+                    </div>
+                </div>
+                <div class="pizarra-card" id="pizarra-now">
+                    <h4>Now Logistics</h4>
+                    <p class="metric-hours" id="acc-hours-now">0.0 h</p>
+                    <div class="details">
+                        <span id="acc-staff-now">Personal: 0</span>
+                        <span id="acc-status-now">🟢 Operación Segura</span>
+                    </div>
+                </div>
+                <div class="pizarra-card" id="pizarra-gtg">
+                    <h4>GTG</h4>
+                    <p class="metric-hours" id="acc-hours-gtg">0.0 h</p>
+                    <div class="details">
+                        <span id="acc-staff-gtg">Personal: 0</span>
+                        <span id="acc-status-gtg">🟢 Operación Segura</span>
+                    </div>
+                </div>
             </div>
+
+            <h2 class="section-title">✍️ Carga Manual de Métricas de Planta (Calculadora SST)</h2>
+            <form id="pizarraForm" onsubmit="actualizarPizarraManual(event)">
+                <div class="form-group-row">
+                    <div>
+                        <label>Seleccionar Empresa</label>
+                        <select id="piz_empresa">
+                            <option value="notions">Notions Dominicana</option>
+                            <option value="now">Now Logistics</option>
+                            <option value="gtg">GTG</option>
+                        </select>
+                    </div>
+                    <div><label>Cantidad de Empleados Activos</label><input type="number" id="piz_empleados" min="0" required></div>
+                </div>
+                <div class="form-group-row">
+                    <div><label>Horas Promedio Trabajadas por Empleado</label><input type="number" id="piz_horas_emp" min="0" step="0.1" required></div>
+                    <div>
+                        <label>💥 ¿Se registró algún accidente de trabajo?</label>
+                        <select id="piz_accidente">
+                            <option value="no">🟢 No (Sumar Horas Impecables)</option>
+                            <option value="si">🔴 SÍ (Reiniciar Contador a 0)</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" style="background:var(--sidebar-bg);">Afectar Indicador de Empresa</button>
+            </form>
         </div>
 
     </div>
@@ -918,7 +947,7 @@ function getFiltroUsuario() {
 }
 
 function ejecutarFiltroGlobal() {
-    render(); renderRep(); renderAsociados(); renderInducciones(); drawPizarraLayout(); updateCharts();
+    render(); renderRep(); renderAsociados(); renderInducciones(); drawPizarraLayout(); updateCharts(); calcularAlertasDashboard();
 }
 
 function showSection(id){
@@ -926,7 +955,7 @@ function showSection(id){
     document.getElementById(id).classList.add("active");
     document.querySelectorAll(".sidebar a").forEach(a=>a.classList.remove("active-menu"));
     if(document.getElementById(`menu-${id}`)) document.getElementById(`menu-${id}`).classList.add("active-menu");
-    if(id === 'indicadores' || id === 'inicio') updateCharts();
+    if(id === 'inicio') updateCharts();
 }
 
 function limpiarFiltroFecha() {
@@ -956,11 +985,13 @@ function actualizarPizarraManual(e) {
     localStorage.setItem("pizarra_sst", JSON.stringify(datosPizarra));
     document.getElementById("pizarraForm").reset();
     drawPizarraLayout();
+    calcularAlertasDashboard();
 }
 
 function drawPizarraLayout() {
     ["notions", "now", "gtg"].forEach(emp => {
         let card = document.getElementById(`pizarra-${emp}`);
+        if (!card) return;
         let hoursTxt = document.getElementById(`acc-hours-${emp}`);
         let staffTxt = document.getElementById(`acc-staff-${emp}`);
         let statusTxt = document.getElementById(`acc-status-${emp}`);
@@ -976,6 +1007,47 @@ function drawPizarraLayout() {
             statusTxt.innerText = "🟢 Operación Segura";
         }
     });
+}
+
+/* DINÁMICA DE RECOPILACIÓN PARA EL DASHBOARD */
+function calcularAlertasDashboard() {
+    let lista = document.getElementById("lista-alertas-dashboard");
+    let container = document.getElementById("panel-alertas-dashboard");
+    if (!lista) return;
+
+    let alertasHtml = "";
+    
+    // 1. Reportes críticos
+    let reportesAbiertos = reportes.filter(r => r.estado === "Abierto" || r.estado === "En proceso");
+    if (reportesAbiertos.length > 0) {
+        alertasHtml += `<li>⚠️ Hay <strong>${reportesAbiertos.length} reporte(s) de anomalías</strong> activos en la mesa de control.</li>`;
+    }
+
+    // 2. Alertas de accidentes activas en planta
+    let empresasConAccidente = [];
+    if (datosPizarra.notions.alerta) empresasConAccidente.push("Notions Dominicana");
+    if (datosPizarra.now.alerta) empresasConAccidente.push("Now Logistics");
+    if (datosPizarra.gtg.alerta) empresasConAccidente.push("GTG");
+
+    if (empresasConAccidente.length > 0) {
+        alertasHtml += `<li>🚨 <strong>Alerta de Incidente:</strong> Se registra reinicio de horas seguras en: ${empresasConAccidente.join(", ")}.</li>`;
+        container.style.borderLeftColor = "var(--sec-red)";
+    } else {
+        container.style.borderLeftColor = "var(--sec-green)";
+    }
+
+    // 3. Inducciones vencidas
+    let hoy = new Date(obtenerFechaHoyLocal() + "T00:00:00");
+    let vencidos = inducciones.filter(ind => new Date(ind.vencimiento + "T00:00:00") < hoy).length;
+    if (vencidos > 0) {
+        alertasHtml += `<li>🎓 Atención: Existen <strong>${vencidos} registro(s) de inducción vencidos</strong> en la base de datos de contratistas/visitas.</li>`;
+    }
+
+    if (alertasHtml === "") {
+        lista.innerHTML = "<li>🟢 Todo se encuentra al día. Ninguna alerta crítica detectada en los módulos periféricos.</li>";
+    } else {
+        lista.innerHTML = alertasHtml;
+    }
 }
 
 /* RENDERS PRINCIPALES */
@@ -1075,15 +1147,15 @@ function renderRep(){
     });
     localStorage.setItem("rep", JSON.stringify(reportes));
 }
-function cambiarEstadoReporte(index, nuevoEstado) { reportes[index].estado = nuevoEstado; renderRep(); }
-function eliminarReporte(index) { if(confirm("¿Eliminar este reporte?")) { reportes.splice(index, 1); renderRep(); } }
+function cambiarEstadoReporte(index, nuevoEstado) { reportes[index].estado = nuevoEstado; renderRep(); calcularAlertasDashboard(); }
+function eliminarReporte(index) { if(confirm("¿Eliminar este reporte?")) { reportes.splice(index, 1); renderRep(); calcularAlertasDashboard(); } }
 
 if(document.getElementById("reporteForm")) {
     document.getElementById("reporteForm").onsubmit = e => {
         e.preventDefault();
         let asignadoA = getFiltroUsuario() !== "todos" ? getFiltroUsuario() : usuarioActivo.username;
         reportes.push({ usuario: asignadoA, titulo: r_titulo.value, origen: r_origen.value, tipo: r_tipo.value, criticidad: r_criticidad.value, desc: r_desc.value, estado: r_estado.value });
-        document.getElementById("reporteForm").reset(); renderRep();
+        document.getElementById("reporteForm").reset(); renderRep(); calcularAlertasDashboard();
     };
 }
 
@@ -1109,7 +1181,7 @@ function guardarInduccion(e) {
     });
     localStorage.setItem("ind", JSON.stringify(inducciones));
     document.getElementById("induccionForm").reset();
-    adaptarFormularioInduccion("Contratista"); renderInducciones();
+    adaptarFormularioInduccion("Contratista"); renderInducciones(); calcularAlertasDashboard();
 }
 
 function renderInducciones() {
@@ -1121,7 +1193,7 @@ function renderInducciones() {
         t.innerHTML += `<tr><td><strong>${ind.tipo}</strong></td><td>${ind.nombre}</td><td>${ind.documento} <br><small style="color:gray;">${ind.empresa}</small></td><td>${areaLabel}</td><td>📅 ${ind.fecha}</td><td>📅 ${ind.vencimiento}</td><td>${estatus}</td><td><button class="btn-delete" onclick="eliminarInduccion(${i})">🗑️ Borrar</button></td></tr>`;
     });
 }
-function eliminarInduccion(index) { if(confirm("¿Eliminar esta inducción del registro?")) { inducciones.splice(index, 1); localStorage.setItem("ind", JSON.stringify(inducciones)); renderInducciones(); } }
+function eliminarInduccion(index) { if(confirm("¿Eliminar esta inducción del registro?")) { inducciones.splice(index, 1); localStorage.setItem("ind", JSON.stringify(inducciones)); renderInducciones(); calcularAlertasDashboard(); } }
 
 /* ASOCIADOS */
 function renderAsociados() {
@@ -1165,7 +1237,7 @@ function exportarInduccionesCSV() {
     let link = document.createElement("a"); link.setAttribute("href", encodeURI(csvContent)); link.setAttribute("download", "Reporte_Inducciones_SST.csv"); document.body.appendChild(link); link.click(); document.body.removeChild(link);
 }
 
-/* GRÁFICAS FIELMENTE TRADUCIDAS */
+/* GRÁFICAS */
 function updateCharts() {
     if (!usuarioActivo) return;
     let filtro = getFiltroUsuario();
