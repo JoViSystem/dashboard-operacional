@@ -879,6 +879,7 @@ table select {
                         <select id="ind_tipo" onchange="adaptarFormularioInduccion(this.value)">
                             <option value="Contratista">Contratista 👤</option>
                             <option value="Visitante">Visitante 👥</option>
+                            <option value="Colaborador">Colaborador 🧑‍💼</option>
                         </select>
                     </div>
                     <div>
@@ -894,6 +895,16 @@ table select {
                     <div>
                         <label>Fecha de la Inducción</label>
                         <input type="date" id="ind_fecha" required>
+                    </div>
+                </div>
+                <div class="form-group-row">
+                    <div><label>⏱️ Hora Inicio Inducción</label><input type="time" id="ind_hora_inicio" required></div>
+                    <div><label>⏱️ Hora Fin Inducción</label><input type="time" id="ind_hora_fin" required></div>
+                </div>
+                <div class="form-group-row">
+                    <div>
+                        <label>🎯 Responsable de la Inducción:</label>
+                        <select id="ind_asignar_a"></select>
                     </div>
                 </div>
                 <div class="form-group-row" id="campos-dinamicos-induccion">
@@ -912,10 +923,12 @@ table select {
             <table>
                 <thead>
                     <tr>
+                        <th>Responsable</th>
                         <th>Personal</th>
                         <th>Nombre</th>
                         <th>Identificación / Empresa</th>
                         <th>Área</th>
+                        <th>Horas</th>
                         <th>Registro</th>
                         <th>Vencimiento</th>
                         <th>Estatus</th>
@@ -1218,6 +1231,7 @@ function configurarSelectoresPorRol() {
     let filtroSelect = document.getElementById("filtroEmpleado");
     let asignaAct = document.getElementById("asignar_a");
     let asignaAsoc = document.getElementById("asoc_asignar_a");
+    let asignaInd = document.getElementById("ind_asignar_a");
 
     let optionsFiltro = `<option value="todos">-- Todos los Empleados --</option>
                          <option value="jgarcia">Joan Garcia</option>
@@ -1237,6 +1251,7 @@ function configurarSelectoresPorRol() {
     filtroSelect.innerHTML = optionsFiltro;
     asignaAct.innerHTML = optionsForm;
     asignaAsoc.innerHTML = optionsForm;
+    if (asignaInd) asignaInd.innerHTML = optionsForm;
 }
 
 function getFiltroUsuario() {
@@ -1465,6 +1480,8 @@ function adaptarFormularioInduccion(tipo) {
     let contenedorDinamico = document.getElementById("campos-dinamicos-induccion");
     if (tipo === "Contratista") {
         contenedorDinamico.innerHTML = `<div><label>Empresa Contratista</label><input id="ind_empresa" required placeholder="Nombre de la empresa contratista"></div>`;
+    } else if (tipo === "Colaborador") {
+        contenedorDinamico.innerHTML = `<div><label>Departamento / Cargo del Colaborador</label><input id="ind_empresa" required placeholder="Ej: Operaciones / Técnico de Seguridad"></div>`;
     } else {
         contenedorDinamico.innerHTML = `<div><label>Motivo de la Visita o Área Interna</label><input id="ind_empresa" required placeholder="Ej: Inspección Técnica / Planta 1"></div>`;
     }
@@ -1477,6 +1494,14 @@ function guardarInduccion(e) {
     let doc = document.getElementById("ind_documento").value;
     let fechaReg = document.getElementById("ind_fecha").value;
     let empresa_area = document.getElementById("ind_empresa").value;
+    let horaIni = document.getElementById("ind_hora_inicio").value;
+    let horaFin = document.getElementById("ind_hora_fin").value;
+    let asignadoA = document.getElementById("ind_asignar_a").value || usuarioActivo.username;
+
+    // Calcular horas invertidas
+    let hi = horaIni.split(":"); let hf = horaFin.split(":");
+    let horasInd = (parseInt(hf[0]) + hf[1]/60) - (parseInt(hi[0]) + hi[1]/60);
+    if (horasInd < 0) { alert("La hora de fin no puede ser menor a la hora de inicio."); return; }
 
     let dateObj = new Date(fechaReg + "T00:00:00");
     dateObj.setFullYear(dateObj.getFullYear() + 1);
@@ -1487,7 +1512,9 @@ function guardarInduccion(e) {
     let fechaVenc = `${yyyy}-${mm}-${dd}`;
 
     inducciones.push({
-        tipo: tipo, nombre: nombre, documento: doc, fechaRegistro: fechaReg, fechaVencimiento: fechaVenc, detalle: empresa_area
+        usuario: asignadoA,
+        tipo: tipo, nombre: nombre, documento: doc, fechaRegistro: fechaReg, fechaVencimiento: fechaVenc, detalle: empresa_area,
+        horas: horasInd
     });
 
     localStorage.setItem("ind", JSON.stringify(inducciones));
@@ -1502,18 +1529,32 @@ function renderInducciones() {
     if(!tbody) return;
     tbody.innerHTML = "";
     let hoyStr = obtenerFechaHoyLocal();
+    let filtro = getFiltroUsuario ? getFiltroUsuario() : "todos";
+    let filtroDia = document.getElementById("filtroCalendarioDia") ? document.getElementById("filtroCalendarioDia").value : "";
 
     inducciones.forEach((ind, i) => {
+        if (!ind.usuario) ind.usuario = "dcumplimiento";
+        if (usuarioActivo && usuarioActivo.rol === "supervisor" && ind.usuario === "dcumplimiento") return;
+        if (filtro !== "todos" && ind.usuario !== filtro) return;
+
+        // Filtrar por fecha si hay filtro activo
+        if (filtroDia && ind.fechaRegistro !== filtroDia) return;
+
         let esVencido = hoyStr > ind.fechaVencimiento;
         let badgeClase = esVencido ? "badge-rojo" : "badge-verde";
         let estatusTexto = esVencido ? "❌ Vencido" : "✅ Vigente";
+        let icono = ind.tipo === 'Contratista' ? '👷' : ind.tipo === 'Colaborador' ? '🧑‍💼' : '👤';
+        let horasMostr = typeof ind.horas === 'number' ? ind.horas.toFixed(2) : "0.00";
+        let respNombre = USUARIOS_VALIDOS[ind.usuario] ? USUARIOS_VALIDOS[ind.usuario].nombre : "Desconocido";
 
         tbody.innerHTML += `
         <tr>
-            <td>${ind.tipo === 'Contratista' ? '👷' : '👤'} ${ind.tipo}</td>
+            <td style="font-weight:600;">👤 ${respNombre}</td>
+            <td>${icono} ${ind.tipo}</td>
             <td><strong>${ind.nombre}</strong></td>
             <td>${ind.documento} <br><small style="color:gray;">${ind.detalle}</small></td>
             <td>SST General</td>
+            <td style="font-weight:600; color:var(--accent-blue);">⏱️ ${horasMostr}h</td>
             <td>📅 ${ind.fechaRegistro}</td>
             <td style="font-weight:600; color:${esVencido ? '#b91c1c':'#15803d'}">📅 ${ind.fechaVencimiento}</td>
             <td><span class="${badgeClase}" style="padding:4px 10px; border-radius:12px; font-size:12px; font-weight:bold;">${estatusTexto}</span></td>
@@ -1532,9 +1573,11 @@ function eliminarInduccion(index) {
 }
 
 function exportarInduccionesExcel() {
-    let csv = "Tipo Personal,Nombre,Identificacion,Empresa o Motivo,Fecha Induccion,Fecha Vencimiento\n";
+    let csv = "Responsable,Tipo Personal,Nombre,Identificacion,Empresa o Motivo,Fecha Induccion,Horas Invertidas,Fecha Vencimiento\n";
     inducciones.forEach(ind => {
-        csv += `"${ind.tipo}","${ind.nombre}","${ind.documento}","${ind.detalle}","${ind.fechaRegistro}","${ind.fechaVencimiento}"\n`;
+        let respNombre = USUARIOS_VALIDOS[ind.usuario]?.nombre || "Desconocido";
+        let horas = typeof ind.horas === 'number' ? ind.horas.toFixed(2) : "0.00";
+        csv += `"${respNombre}","${ind.tipo}","${ind.nombre}","${ind.documento}","${ind.detalle}","${ind.fechaRegistro}","${horas}","${ind.fechaVencimiento}"\n`;
     });
     descargarCSV(csv, "Control_Vigencias_Inducciones_SST.csv");
 }
@@ -1628,17 +1671,36 @@ function render(){
     let conteoAsociadosDia = 0;
     asociados.forEach(asoc => {
         if (!asoc.usuario) asoc.usuario = "dcumplimiento";
+        if (!asoc.horasPorUsuario) asoc.horasPorUsuario = {};
         if (usuarioActivo.rol === "supervisor" && asoc.usuario === "dcumplimiento") return;
         if (filtro !== "todos" && asoc.usuario !== filtro) return;
 
         if (!filtroDia || asoc.fecha === filtroDia) {
-            horasDiaAsociados += (asoc.horas || 0);
+            // Si hay filtro por usuario específico, sumar solo sus horas individuales
+            if (filtro !== "todos") {
+                horasDiaAsociados += (asoc.horasPorUsuario[filtro] || 0);
+            } else {
+                horasDiaAsociados += (asoc.horas || 0);
+            }
             conteoAsociadosDia++;
         }
     });
 
-    let granTotalHorasDia = horasDiaActividades + horasDiaAsociados;
-    let granTotalCargaObjetos = conteoActividadesDia + conteoAsociadosDia;
+    let horasDiaInducciones = 0;
+    let conteoInduccionesDia = 0;
+    inducciones.forEach(ind => {
+        if (!ind.usuario) ind.usuario = "dcumplimiento";
+        if (usuarioActivo.rol === "supervisor" && ind.usuario === "dcumplimiento") return;
+        if (filtro !== "todos" && ind.usuario !== filtro) return;
+
+        if (!filtroDia || ind.fechaRegistro === filtroDia) {
+            horasDiaInducciones += (ind.horas || 0);
+            conteoInduccionesDia++;
+        }
+    });
+
+    let granTotalHorasDia = horasDiaActividades + horasDiaAsociados + horasDiaInducciones;
+    let granTotalCargaObjetos = conteoActividadesDia + conteoAsociadosDia + conteoInduccionesDia;
 
     let reportesAbiertosConteo = reportes.filter(r => {
         if (usuarioActivo.rol === "supervisor" && r.usuario === "dcumplimiento") return false;
@@ -1760,12 +1822,25 @@ function renderAsociados() {
 
     asociados.forEach((asoc, i) => {
         if (!asoc.usuario) asoc.usuario = "dcumplimiento";
+        if (!asoc.horasPorUsuario) asoc.horasPorUsuario = {};
+        // Migración: si no existe el desglose, asignar las horas al dueño actual
+        if (Object.keys(asoc.horasPorUsuario).length === 0 && asoc.horas) {
+            asoc.horasPorUsuario[asoc.usuario] = asoc.horas;
+        }
         if (usuarioActivo.rol === "supervisor" && asoc.usuario === "dcumplimiento") return; 
         
         let belongsToFilter = (filtro === "todos" || asoc.usuario === filtro);
         let claseEst = asoc.estatus === "En depuración" ? "badge-rojo" : asoc.estatus === "En revisión y firma" ? "badge-amarillo" : asoc.estatus === "Listo para enviar" ? "badge-azul" : "badge-verde";
         let deshabilitarCampos = (usuarioActivo.rol !== "admin" && asoc.usuario !== usuarioActivo.username) ? "disabled" : "";
-        let horasMostrables = typeof asoc.horas === 'number' ? asoc.horas.toFixed(2) : "0.00";
+
+        // Horas individuales: si hay filtro por usuario, mostrar solo sus horas; si es "todos", mostrar total
+        let horasMostrar = 0;
+        if (filtro === "todos") {
+            horasMostrar = asoc.horas || 0;
+        } else {
+            horasMostrar = asoc.horasPorUsuario[filtro] || 0;
+        }
+        let horasMostrables = horasMostrar.toFixed(2);
 
         if (belongsToFilter) {
             tActivos.innerHTML += `
@@ -1797,11 +1872,22 @@ function renderAsociados() {
         if(!logsHTML) logsHTML = `<em style="color:gray; font-size:12px;">Sin movimientos</em>`;
         let respNombre = USUARIOS_VALIDOS[asoc.usuario]?.nombre || "Desconocido";
 
+        // Desglose de horas por responsable para la vista historial
+        let desglosHoras = Object.entries(asoc.horasPorUsuario)
+            .map(([usr, hrs]) => {
+                let n = USUARIOS_VALIDOS[usr]?.nombre || usr;
+                return `<small style="display:block; color:#475569;">👤 ${n}: <strong>${hrs.toFixed(2)}h</strong></small>`;
+            }).join("");
+        if (!desglosHoras) desglosHoras = `<small style="color:gray;">Sin desglose</small>`;
+
         tHistorialGlobal.innerHTML += `
         <tr>
             <td style="font-weight:600; color:var(--sidebar-bg);">👤 ${respNombre}</td>
             <td><strong>${asoc.nombre}</strong></td>
-            <td style="font-weight:600;">⏱️ ${horasMostrables}h</td>
+            <td style="font-weight:600;">
+                ⏱️ ${(asoc.horas || 0).toFixed(2)}h total<br>
+                <div style="margin-top:4px;">${desglosHoras}</div>
+            </td>
             <td><span class="${claseEst}" style="padding:4px 10px; border-radius:12px; font-size:13px; font-weight:700;">${asoc.estatus}</span></td>
             <td><div class="log-box">${logsHTML}</div></td>
         </tr>`;
@@ -1834,8 +1920,13 @@ asociadoForm.onsubmit = e => {
     if (horasAsoc < 0) { alert("La hora de fin no puede ser menor."); return; }
     let asignadoA = document.getElementById("asoc_asignar_a").value || usuarioActivo.username;
     
+    // Registrar horas individualmente por responsable
+    let horasPorUsuario = {};
+    horasPorUsuario[asignadoA] = horasAsoc;
+
     asociados.push({
         usuario: asignadoA, nombre: asoc_nombre.value, estatus: asoc_estatus.value, fecha: asoc_fecha.value, horas: horasAsoc,
+        horasPorUsuario: horasPorUsuario,
         historial: [{ fecha: new Date().toLocaleString(), detalle: `Alta de registro (${horasAsoc.toFixed(2)} hrs de gestión). Asignado a: ${USUARIOS_VALIDOS[asignadoA].nombre}` }]
     });
     asociadoForm.reset(); ejecutarFiltroGlobal();
