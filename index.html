@@ -1133,10 +1133,10 @@ function activarSincronizacionRealtime() {
 
 // ==========================================
 let USUARIOS_VALIDOS = JSON.parse(localStorage.getItem("app_usuarios")) || {
-    "dcumplimiento": { clave: "admin123", rol: "admin", nombre: "Super Administrador" },
-    "jgarcia": { clave: "1234", rol: "empleado", nombre: "Joan Garcia" },
-    "jhilario": { clave: "1234", rol: "empleado", nombre: "Jhoan Hilario" },
-    "vtorres": { clave: "1234", rol: "supervisor", nombre: "Victor Torres" }
+    "dcumplimiento": { clave: "admin123", rol: "admin", nombre: "Super Administrador", posicion: "Administrador" },
+    "jgarcia": { clave: "1234", rol: "empleado", nombre: "Joan Garcia", posicion: "Inspector" },
+    "jhilario": { clave: "1234", rol: "empleado", nombre: "Jhoan Hilario", posicion: "Coordinador" },
+    "vtorres": { clave: "1234", rol: "supervisor", nombre: "Victor Torres", posicion: "Gerente" }
 };
 
 const SABIAS_QUE_DATOS = [
@@ -1203,7 +1203,7 @@ function verificarSesion() {
         document.getElementById("app-content").style.display = "block";
         
         document.getElementById("user-display-name").innerText = usuarioActivo.nombre;
-        document.getElementById("user-display-role").innerText = `Rol: ${usuarioActivo.rol.toUpperCase()}`;
+        document.getElementById("user-display-role").innerText = usuarioActivo.posicion ? usuarioActivo.posicion : `Rol: ${usuarioActivo.rol.toUpperCase()}`;
         
         cargarPreferenciasUsuarioActivo();
         configurarSelectoresPorRol();
