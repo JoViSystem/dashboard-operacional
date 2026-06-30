@@ -809,6 +809,11 @@ table select {
                         <option value="gtg">GTG</option>
                         <option value="notions_group">🏢 Notions Group (Consolidado - Suma de las 3 empresas)</option>
                     </select>
+                    <label style="margin-top:12px; display:block; font-weight:bold; color:var(--sidebar-bg); font-size:14px;">📅 Periodo a Cargar/Ver:</label>
+                    <select id="acc_periodo_selector" onchange="cargarEmpresaAccidentabilidad(document.getElementById('acc_empresa_selector').value)" style="margin-top:6px;">
+                        <option value="actual">📈 Año Actual</option>
+                        <option value="anterior">📅 Año Anterior</option>
+                    </select>
                 </div>
 
                 <div class="form-group-row">
@@ -867,6 +872,11 @@ table select {
                     <div id="resumen-lista-empresas" style="font-size:14px; display:flex; flex-direction:column; gap:12px; margin-top:10px;">
                     </div>
                 </div>
+            </div>
+
+            <h2 class="section-title" style="color: var(--accent-blue);">🔄 Comparativa Año Actual vs Año Anterior</h2>
+            <div class="chart-box" style="margin-top: 15px;">
+                <div style="position: relative; height:280px;"><canvas id="accidentabilidadComparativaChart"></canvas></div>
             </div>
         </div>
 
@@ -1081,7 +1091,7 @@ function sbAplicarFila(key, value) {
         else if (key === 'rep')                    reportes               = JSON.parse(value);
         else if (key === 'asoc')                   asociados              = JSON.parse(value);
         else if (key === 'ind')                    inducciones            = JSON.parse(value);
-        else if (key === 'acc_master_3_companies') accidentabilidadMaestra = JSON.parse(value);
+        else if (key === 'acc_master_3_companies') { accidentabilidadMaestra = JSON.parse(value); migrarEstructuraAccidentabilidadPeriodos(); }
         else if (key === 'app_usuarios')         { USUARIOS_VALIDOS       = JSON.parse(value); migrarPosicionesUsuarios(); }
     } catch(e) {}
 }
@@ -1190,15 +1200,17 @@ let asociados = JSON.parse(localStorage.getItem("asoc")) || [];
 let inducciones = JSON.parse(localStorage.getItem("ind")) || [];
 
 let accidentabilidadMaestra = JSON.parse(localStorage.getItem("acc_master_3_companies")) || {
-    notions: { fecha: obtenerFechaHoyLocal(), dias: 0, colaboradores: 55, jornada: 8, recordAnterior: 0, accidentes: 0 },
-    now: { fecha: obtenerFechaHoyLocal(), dias: 0, colaboradores: 30, jornada: 8, recordAnterior: 0, accidentes: 0 },
-    gtg: { fecha: obtenerFechaHoyLocal(), dias: 0, colaboradores: 20, jornada: 8, recordAnterior: 0, accidentes: 0 }
+    notions: { actual: { fecha: obtenerFechaHoyLocal(), dias: 0, colaboradores: 55, jornada: 8, recordAnterior: 0, accidentes: 0 }, anterior: { fecha: "", dias: 0, colaboradores: 55, jornada: 8, recordAnterior: 0, accidentes: 0 } },
+    now: { actual: { fecha: obtenerFechaHoyLocal(), dias: 0, colaboradores: 30, jornada: 8, recordAnterior: 0, accidentes: 0 }, anterior: { fecha: "", dias: 0, colaboradores: 30, jornada: 8, recordAnterior: 0, accidentes: 0 } },
+    gtg: { actual: { fecha: obtenerFechaHoyLocal(), dias: 0, colaboradores: 20, jornada: 8, recordAnterior: 0, accidentes: 0 }, anterior: { fecha: "", dias: 0, colaboradores: 20, jornada: 8, recordAnterior: 0, accidentes: 0 } }
 };
+migrarEstructuraAccidentabilidadPeriodos();
 
 let myCategoryChart = null;
 let myComplianceChart = null;
 let myCumplimientoGeneralChart = null;
-let myAccidentabilidadChart = null; 
+let myAccidentabilidadChart = null;
+let myAccidentabilidadComparativaChart = null;
 
 // Flujo de etapas de Asociados de Negocios y quién es responsable de completar cada una.
 // Cada usuario "cumple" su parte en cuanto el estatus avanza MÁS ALLÁ de la etapa que le toca,
@@ -1405,10 +1417,34 @@ function cambiarContrasenaUsuario(e) {
 /* ACCIDENTABILIDAD MULTI-EMPRESA */
 let diasTrazabilidadCalculados = 0;
 
-function calcularConsolidadoNotionsGroup() {
-    let totalDias = 0, totalColaboradores = 0, totalJornadaProm = 0, totalRecordAnterior = 0, totalAccidentes = 0, cantEmpresas = 0;
+// Migración no destructiva: si una empresa está guardada en el formato viejo (campos planos
+// como .dias, .colaboradores directamente), se envuelve como su periodo "actual" y se crea
+// un periodo "anterior" en cero para que se pueda llenar la comparativa. No se pierde nada.
+function migrarEstructuraAccidentabilidadPeriodos() {
+    if (!accidentabilidadMaestra) return;
+    let huboCambios = false;
     Object.keys(accidentabilidadMaestra).forEach(key => {
         let em = accidentabilidadMaestra[key];
+        if (em && !em.actual) {
+            accidentabilidadMaestra[key] = {
+                actual: { fecha: em.fecha || obtenerFechaHoyLocal(), dias: em.dias || 0, colaboradores: em.colaboradores || 0, jornada: em.jornada || 8, recordAnterior: em.recordAnterior || 0, accidentes: em.accidentes || 0 },
+                anterior: { fecha: "", dias: 0, colaboradores: em.colaboradores || 0, jornada: em.jornada || 8, recordAnterior: 0, accidentes: 0 }
+            };
+            huboCambios = true;
+        }
+    });
+    if (huboCambios) {
+        localStorage.setItem("acc_master_3_companies", JSON.stringify(accidentabilidadMaestra));
+        sbSet("acc_master_3_companies", JSON.stringify(accidentabilidadMaestra));
+    }
+}
+
+function calcularConsolidadoNotionsGroup(periodo) {
+    periodo = periodo || "actual";
+    let totalDias = 0, totalColaboradores = 0, totalJornadaProm = 0, totalRecordAnterior = 0, totalAccidentes = 0, cantEmpresas = 0;
+    Object.keys(accidentabilidadMaestra).forEach(key => {
+        let em = accidentabilidadMaestra[key][periodo];
+        if (!em) return;
         totalDias += em.dias || 0;
         totalColaboradores += em.colaboradores || 0;
         totalJornadaProm += em.jornada || 0;
@@ -1423,11 +1459,13 @@ function cargarEmpresaAccidentabilidad(empresaKey) {
     let form = document.getElementById("accidentabilidadForm");
     let camposEditables = ["acc_fecha_actualizacion", "acc_input_dias", "acc_accidentes_periodo", "acc_colaboradores", "acc_jornada", "acc_record_anterior"];
     let btnSubmit = form.querySelector("button[type=submit]");
+    let periodo = document.getElementById("acc_periodo_selector").value;
+    let etiquetaPeriodo = periodo === "anterior" ? "Año Anterior" : "Año Actual";
 
     if (empresaKey === "notions_group") {
         // Vista consolidada de solo lectura: no se edita ni se guarda, es una suma calculada
-        let cons = calcularConsolidadoNotionsGroup();
-        document.getElementById("txt-btn-empresa").innerText = "Notions Group (Consolidado)";
+        let cons = calcularConsolidadoNotionsGroup(periodo);
+        document.getElementById("txt-btn-empresa").innerText = `Notions Group (Consolidado - ${etiquetaPeriodo})`;
         document.getElementById("acc_fecha_actualizacion").value = obtenerFechaHoyLocal();
         document.getElementById("acc_input_dias").value = cons.totalDias;
         document.getElementById("acc_colaboradores").value = cons.totalColaboradores;
@@ -1446,18 +1484,19 @@ function cargarEmpresaAccidentabilidad(empresaKey) {
     camposEditables.forEach(id => document.getElementById(id).disabled = false);
     if (btnSubmit) { btnSubmit.disabled = false; btnSubmit.style.opacity = "1"; btnSubmit.style.cursor = "pointer"; }
 
-    let datos = accidentabilidadMaestra[empresaKey];
+    let datos = accidentabilidadMaestra[empresaKey][periodo];
     let nombresMap = { notions: "Notions Dominicana", now: "Now Logistics", gtg: "GTG" };
-    document.getElementById("txt-btn-empresa").innerText = nombresMap[empresaKey];
+    document.getElementById("txt-btn-empresa").innerText = `${nombresMap[empresaKey]} (${etiquetaPeriodo})`;
 
-    document.getElementById("acc_fecha_actualizacion").value = datos.fecha || obtenerFechaHoyLocal();
+    document.getElementById("acc_fecha_actualizacion").value = datos.fecha || (periodo === "actual" ? obtenerFechaHoyLocal() : "");
     document.getElementById("acc_input_dias").value = datos.dias;
     document.getElementById("acc_colaboradores").value = datos.colaboradores;
     document.getElementById("acc_jornada").value = datos.jornada;
     document.getElementById("acc_record_anterior").value = datos.recordAnterior;
     document.getElementById("acc_accidentes_periodo").value = datos.accidentes || 0;
     
-    verificarTrazabilidadFechas();
+    // La trazabilidad automática de días transcurridos solo aplica al periodo actual (en curso)
+    if (periodo === "actual") { verificarTrazabilidadFechas(); } else { document.getElementById("acc-banner-trazabilidad").style.display = "none"; }
     calcularHorasEnCaliente();
 }
 
@@ -1504,6 +1543,7 @@ function calcularHorasEnCaliente() {
 function guardarDatosAccidentabilidad(e) {
     e.preventDefault();
     let empresaKey = document.getElementById("acc_empresa_selector").value;
+    let periodo = document.getElementById("acc_periodo_selector").value;
     if (empresaKey === "notions_group") {
         alert("⚠️ Notions Group es un consolidado calculado automáticamente, no se puede editar directamente. Actualiza los datos de cada empresa individual.");
         return;
@@ -1518,7 +1558,8 @@ function guardarDatosAccidentabilidad(e) {
         }
     }
 
-    accidentabilidadMaestra[empresaKey] = {
+    if (!accidentabilidadMaestra[empresaKey]) accidentabilidadMaestra[empresaKey] = {};
+    accidentabilidadMaestra[empresaKey][periodo] = {
         fecha: document.getElementById("acc_fecha_actualizacion").value,
         dias: diasInput,
         colaboradores: parseInt(document.getElementById("acc_colaboradores").value) || 0,
@@ -1531,7 +1572,8 @@ function guardarDatosAccidentabilidad(e) {
     sbSet("acc_master_3_companies", JSON.stringify(accidentabilidadMaestra));
     
     let nombresMap = { notions: "Notions Dominicana", now: "Now Logistics", gtg: "GTG" };
-    alert(`¡Pizarra de Accidentabilidad de [${nombresMap[empresaKey]}] actualizada!`);
+    let etiquetaPeriodo = periodo === "anterior" ? "Año Anterior" : "Año Actual";
+    alert(`¡Pizarra de Accidentabilidad de [${nombresMap[empresaKey]} - ${etiquetaPeriodo}] actualizada!`);
     cargarEmpresaAccidentabilidad(empresaKey);
     renderModuloVisualAccidentabilidad();
 }
@@ -1543,10 +1585,10 @@ function renderModuloVisualAccidentabilidad() {
 
     let nombresMap = { notions: "Notions Dominicana", now: "Now Logistics", gtg: "GTG" };
 
-    // CONSOLIDADO "Notions Group": suma calculada de las 3 empresas, no es editable directamente
+    // CONSOLIDADO "Notions Group" (sobre el periodo ACTUAL): suma calculada de las 3 empresas
     let totalDias = 0, totalColaboradores = 0, totalHorasSeguras = 0, totalAccidentes = 0;
     Object.keys(accidentabilidadMaestra).forEach(key => {
-        let em = accidentabilidadMaestra[key];
+        let em = accidentabilidadMaestra[key].actual;
         let calcHorasEm = em.accidentes > 0 ? 0 : em.dias * em.colaboradores * em.jornada;
         totalDias += em.dias || 0;
         totalColaboradores += em.colaboradores || 0;
@@ -1564,7 +1606,7 @@ function renderModuloVisualAccidentabilidad() {
     </div>`;
 
     Object.keys(accidentabilidadMaestra).forEach(key => {
-        let em = accidentabilidadMaestra[key];
+        let em = accidentabilidadMaestra[key].actual;
         let calcHoras = em.accidentes > 0 ? 0 : em.dias * em.colaboradores * em.jornada;
         let tieneAccidenteBadge = em.accidentes > 0 ? `<span class="badge-rojo" style="padding:1px 6px; border-radius:4px; font-size:10px;">🚨 Siniestro Activo</span>` : `✅ Operación Limpia`;
         
@@ -1579,9 +1621,9 @@ function renderModuloVisualAccidentabilidad() {
 
     let ctxAcc = document.getElementById("accidentabilidadEmpresasChart");
     if(ctxAcc) {
-        let horasNotions = accidentabilidadMaestra.notions.accidentes > 0 ? 0 : accidentabilidadMaestra.notions.dias * accidentabilidadMaestra.notions.colaboradores * accidentabilidadMaestra.notions.jornada;
-        let horasNow = accidentabilidadMaestra.now.accidentes > 0 ? 0 : accidentabilidadMaestra.now.dias * accidentabilidadMaestra.now.colaboradores * accidentabilidadMaestra.now.jornada;
-        let horasGtg = accidentabilidadMaestra.gtg.accidentes > 0 ? 0 : accidentabilidadMaestra.gtg.dias * accidentabilidadMaestra.gtg.colaboradores * accidentabilidadMaestra.gtg.jornada;
+        let horasNotions = accidentabilidadMaestra.notions.actual.accidentes > 0 ? 0 : accidentabilidadMaestra.notions.actual.dias * accidentabilidadMaestra.notions.actual.colaboradores * accidentabilidadMaestra.notions.actual.jornada;
+        let horasNow = accidentabilidadMaestra.now.actual.accidentes > 0 ? 0 : accidentabilidadMaestra.now.actual.dias * accidentabilidadMaestra.now.actual.colaboradores * accidentabilidadMaestra.now.actual.jornada;
+        let horasGtg = accidentabilidadMaestra.gtg.actual.accidentes > 0 ? 0 : accidentabilidadMaestra.gtg.actual.dias * accidentabilidadMaestra.gtg.actual.colaboradores * accidentabilidadMaestra.gtg.actual.jornada;
 
         if (myAccidentabilidadChart) myAccidentabilidadChart.destroy();
         myAccidentabilidadChart = new Chart(ctxAcc, {
@@ -1589,13 +1631,13 @@ function renderModuloVisualAccidentabilidad() {
             data: {
                 labels: ["Notions Group (Total)", "Notions Dominicana", "Now Logistics", "GTG"],
                 datasets: [{
-                    label: 'Horas Proyectadas de Seguridad',
+                    label: 'Horas Proyectadas de Seguridad (Año Actual)',
                     data: [totalHorasSeguras, horasNotions, horasNow, horasGtg],
                     backgroundColor: [
                         totalAccidentes > 0 ? '#ef4444' : '#10b981',
-                        accidentabilidadMaestra.notions.accidentes > 0 ? '#ef4444' : '#2563eb', 
-                        accidentabilidadMaestra.now.accidentes > 0 ? '#ef4444' : '#3b82f6', 
-                        accidentabilidadMaestra.gtg.accidentes > 0 ? '#ef4444' : '#1e293b'
+                        accidentabilidadMaestra.notions.actual.accidentes > 0 ? '#ef4444' : '#2563eb', 
+                        accidentabilidadMaestra.now.actual.accidentes > 0 ? '#ef4444' : '#3b82f6', 
+                        accidentabilidadMaestra.gtg.actual.accidentes > 0 ? '#ef4444' : '#1e293b'
                     ],
                     borderRadius: 6
                 }]
@@ -1604,6 +1646,32 @@ function renderModuloVisualAccidentabilidad() {
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: { y: { beginAtZero: true } }
+            }
+        });
+    }
+
+    // COMPARATIVA AÑO ACTUAL vs AÑO ANTERIOR, por empresa
+    let ctxComparativa = document.getElementById("accidentabilidadComparativaChart");
+    if (ctxComparativa) {
+        let horasPorPeriodo = (em) => em.accidentes > 0 ? 0 : (em.dias || 0) * (em.colaboradores || 0) * (em.jornada || 0);
+        let labelsComparativa = Object.keys(accidentabilidadMaestra).map(key => nombresMap[key]);
+        let datosActual = Object.keys(accidentabilidadMaestra).map(key => horasPorPeriodo(accidentabilidadMaestra[key].actual));
+        let datosAnterior = Object.keys(accidentabilidadMaestra).map(key => horasPorPeriodo(accidentabilidadMaestra[key].anterior));
+
+        if (myAccidentabilidadComparativaChart) myAccidentabilidadComparativaChart.destroy();
+        myAccidentabilidadComparativaChart = new Chart(ctxComparativa, {
+            type: 'bar',
+            data: {
+                labels: labelsComparativa,
+                datasets: [
+                    { label: '📅 Año Anterior', data: datosAnterior, backgroundColor: '#94a3b8', borderRadius: 6 },
+                    { label: '📈 Año Actual', data: datosActual, backgroundColor: '#2563eb', borderRadius: 6 }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, title: { display: true, text: 'Horas Seguras Acumuladas' } } }
             }
         });
     }
