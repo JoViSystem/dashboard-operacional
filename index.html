@@ -1080,8 +1080,37 @@ function sbAplicarFila(key, value) {
         else if (key === 'asoc')                   asociados              = JSON.parse(value);
         else if (key === 'ind')                    inducciones            = JSON.parse(value);
         else if (key === 'acc_master_3_companies') accidentabilidadMaestra = JSON.parse(value);
-        else if (key === 'app_usuarios')           USUARIOS_VALIDOS       = JSON.parse(value);
+        else if (key === 'app_usuarios')         { USUARIOS_VALIDOS       = JSON.parse(value); migrarPosicionesUsuarios(); }
     } catch(e) {}
+}
+
+// Migración no destructiva: si un usuario guardado en Supabase no tiene "posicion"
+// (porque se creó antes de agregar este campo), se le asigna según su cargo conocido.
+// No modifica clave, rol, nombre ni ningún otro dato ya existente.
+const POSICIONES_POR_DEFECTO = {
+    "dcumplimiento": "Administrador",
+    "jgarcia": "Inspector",
+    "jhilario": "Coordinador",
+    "vtorres": "Gerente"
+};
+function migrarPosicionesUsuarios() {
+    if (!USUARIOS_VALIDOS) return;
+    let huboCambios = false;
+    Object.keys(USUARIOS_VALIDOS).forEach(usr => {
+        if (!USUARIOS_VALIDOS[usr].posicion) {
+            USUARIOS_VALIDOS[usr].posicion = POSICIONES_POR_DEFECTO[usr] || (USUARIOS_VALIDOS[usr].rol ? USUARIOS_VALIDOS[usr].rol.charAt(0).toUpperCase() + USUARIOS_VALIDOS[usr].rol.slice(1) : "Empleado");
+            huboCambios = true;
+        }
+    });
+    if (huboCambios) {
+        localStorage.setItem("app_usuarios", JSON.stringify(USUARIOS_VALIDOS));
+        sbSet("app_usuarios", JSON.stringify(USUARIOS_VALIDOS));
+        if (usuarioActivo) {
+            // Refrescar el usuario activo en sesión con su posición recién migrada
+            let actualizado = USUARIOS_VALIDOS[usuarioActivo.username];
+            if (actualizado) { usuarioActivo.posicion = actualizado.posicion; verificarSesion(); }
+        }
+    }
 }
 
 async function sbSet(key, value) {
@@ -1138,6 +1167,7 @@ let USUARIOS_VALIDOS = JSON.parse(localStorage.getItem("app_usuarios")) || {
     "jhilario": { clave: "1234", rol: "empleado", nombre: "Jhoan Hilario", posicion: "Coordinador" },
     "vtorres": { clave: "1234", rol: "supervisor", nombre: "Victor Torres", posicion: "Gerente" }
 };
+migrarPosicionesUsuarios();
 
 const SABIAS_QUE_DATOS = [
     "La Regla de Oro de la SST indica: 'Si no es seguro, detén el trabajo'. El derecho a rehusarse a tareas unsafe salva miles de vidas anualmente.",
