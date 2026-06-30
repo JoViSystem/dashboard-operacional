@@ -6,6 +6,7 @@
 <title>Control de Cumplimiento </title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
 :root {
@@ -622,6 +623,11 @@ table select {
         <a id="menu-configuracion" onclick="showSection('configuracion')">⚙️ Configuración</a>
         
         <a onclick="logout()" class="btn-logout">🚪 Cerrar Sesión</a>
+
+        <div style="display:flex;align-items:center;gap:8px;margin-top:16px;padding:8px 14px;background:rgba(255,255,255,0.05);border-radius:8px;">
+            <span id="sb-dot" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#f59e0b;flex-shrink:0;transition:background 0.3s;"></span>
+            <span id="sb-txt" style="font-size:11px;color:#94a3b8;">Conectando...</span>
+        </div>
     </div>
 
     <div class="main">
@@ -1035,6 +1041,84 @@ table select {
 </div>
 
 <script>
+// ==========================================
+// SUPABASE — CONFIGURACIÓN Y CONEXIÓN
+// ==========================================
+const SUPABASE_URL = "https://gboiiwvzpkzefabuxmus.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdib2lpd3Z6cGt6ZWZhYnV4bXVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3NTM5NTIsImV4cCI6MjA5ODMyOTk1Mn0.fvBTfgziWQWedJ9VhiNDxaig1f3QbGXmUs67PPn0h0Q";
+const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+function sbActualizarIndicador(estado) {
+    let dot = document.getElementById('sb-dot');
+    let txt = document.getElementById('sb-txt');
+    if (!dot || !txt) return;
+    if (estado === 'ok')         { dot.style.background = '#10b981'; txt.innerText = 'Nube sincronizada'; }
+    else if (estado === 'live')  { dot.style.background = '#10b981'; dot.style.boxShadow = '0 0 6px #10b981'; txt.innerText = 'Tiempo real activo'; }
+    else if (estado === 'error') { dot.style.background = '#ef4444'; txt.innerText = 'Error de conexión'; }
+    else                         { dot.style.background = '#f59e0b'; txt.innerText = 'Conectando...'; }
+}
+
+function sbAplicarFila(key, value) {
+    if (!key || !value) return;
+    localStorage.setItem(key, value);
+    try {
+        if      (key === 'act')                    actividades            = JSON.parse(value);
+        else if (key === 'rep')                    reportes               = JSON.parse(value);
+        else if (key === 'asoc')                   asociados              = JSON.parse(value);
+        else if (key === 'ind')                    inducciones            = JSON.parse(value);
+        else if (key === 'acc_master_3_companies') accidentabilidadMaestra = JSON.parse(value);
+        else if (key === 'app_usuarios')           USUARIOS_VALIDOS       = JSON.parse(value);
+    } catch(e) {}
+}
+
+async function sbSet(key, value) {
+    let { error } = await _sb.from('app_data').upsert(
+        { key, value, updated_at: new Date().toISOString() },
+        { onConflict: 'key' }
+    );
+    if (error) { console.error("[Supabase] Error al guardar '" + key + "':", error.message); sbActualizarIndicador('error'); }
+    else sbActualizarIndicador('ok');
+}
+
+async function cargarDatosDesdeSupabase() {
+    sbActualizarIndicador('connecting');
+    let { data, error } = await _sb.from('app_data').select('key, value');
+    if (error) {
+        console.error("[Supabase] Error al cargar datos:", error.message);
+        sbActualizarIndicador('error');
+        return;
+    }
+    if (data && data.length > 0) {
+        data.forEach(row => sbAplicarFila(row.key, row.value));
+        console.log("[Supabase] " + data.length + " registros cargados.");
+    }
+    sbActualizarIndicador('ok');
+}
+
+function activarSincronizacionRealtime() {
+    _sb.channel('sync_app_data')
+        .on('postgres_changes',
+            { event: '*', schema: 'public', table: 'app_data' },
+            (payload) => {
+                let row = payload.new || {};
+                sbAplicarFila(row.key, row.value);
+                if (usuarioActivo) ejecutarFiltroGlobal();
+                sbActualizarIndicador('live');
+                console.log("[Supabase Realtime] Cambio recibido:", row.key);
+            }
+        )
+        .subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+                sbActualizarIndicador('live');
+                console.log("[Supabase Realtime] Suscripción activa.");
+            } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+                sbActualizarIndicador('error');
+                console.warn("[Supabase Realtime] Sin conexión:", status);
+            }
+        });
+}
+
+// ==========================================
 let USUARIOS_VALIDOS = JSON.parse(localStorage.getItem("app_usuarios")) || {
     "dcumplimiento": { clave: "admin123", rol: "admin", nombre: "Super Administrador" },
     "jgarcia": { clave: "1234", rol: "empleado", nombre: "Joan Garcia" },
@@ -1201,6 +1285,7 @@ function cambiarTemaApariencia(tema) {
     
     if(usuarioActivo) {
         localStorage.setItem(`theme_${usuarioActivo.username}`, tema);
+        sbSet(`theme_${usuarioActivo.username}`, tema);
     }
 }
 
@@ -1212,6 +1297,7 @@ function actualizarFotoPerfil(input) {
             document.getElementById("sidebar-avatar").src = base64Img;
             document.getElementById("config-avatar-preview").src = base64Img;
             localStorage.setItem(`avatar_${usuarioActivo.username}`, base64Img);
+            sbSet(`avatar_${usuarioActivo.username}`, base64Img);
         };
         reader.readAsDataURL(input.files[0]);
     }
@@ -1224,6 +1310,7 @@ function cambiarContrasenaUsuario(e) {
     USUARIOS_VALIDOS[usernameKey].clave = nuevaClave;
     
     localStorage.setItem("app_usuarios", JSON.stringify(USUARIOS_VALIDOS));
+    sbSet("app_usuarios", JSON.stringify(USUARIOS_VALIDOS));
     usuarioActivo.clave = nuevaClave;
     sessionStorage.setItem("sesion_usuario", JSON.stringify(usuarioActivo));
     
@@ -1313,6 +1400,7 @@ function guardarDatosAccidentabilidad(e) {
     };
     
     localStorage.setItem("acc_master_3_companies", JSON.stringify(accidentabilidadMaestra));
+    sbSet("acc_master_3_companies", JSON.stringify(accidentabilidadMaestra));
     
     let nombresMap = { notions: "Notions Dominicana", now: "Now Logistics", gtg: "GTG" };
     alert(`¡Pizarra de Accidentabilidad de [${nombresMap[empresaKey]}] actualizada!`);
@@ -1403,6 +1491,7 @@ function guardarInduccion(e) {
     });
 
     localStorage.setItem("ind", JSON.stringify(inducciones));
+    sbSet("ind", JSON.stringify(inducciones));
     document.getElementById("induccionForm").reset();
     adaptarFormularioInduccion("Contratista");
     renderInducciones();
@@ -1437,6 +1526,7 @@ function eliminarInduccion(index) {
     if(confirm("¿Desea dar de baja esta credencial de inducción?")) {
         inducciones.splice(index, 1);
         localStorage.setItem("ind", JSON.stringify(inducciones));
+        sbSet("ind", JSON.stringify(inducciones));
         renderInducciones();
     }
 }
@@ -1568,12 +1658,14 @@ function render(){
 function cambiarEstadoActividad(index, nuevoEstado) { 
     actividades[index].estado = nuevoEstado; 
     ejecutarFiltroGlobal(); 
+    sbSet("act", JSON.stringify(actividades));
 }
 
 function eliminarActividad(index) { 
     if(confirm("⚠️ ¿Estás seguro de que deseas eliminar permanentemente esta actividad de la base de datos? Esto recalculará los porcentajes de cumplimiento.")) { 
         actividades.splice(index, 1); 
         ejecutarFiltroGlobal(); 
+        sbSet("act", JSON.stringify(actividades));
     } 
 }
 
@@ -1614,6 +1706,7 @@ actividadForm.onsubmit = e => {
     }
 
     actividadForm.reset(); ejecutarFiltroGlobal();
+    sbSet("act", JSON.stringify(actividades));
 };
 
 /* REPORTES */
@@ -1645,14 +1738,15 @@ function renderRep(){
     });
     localStorage.setItem("rep", JSON.stringify(reportes));
 }
-function cambiarEstadoReporte(index, nuevoEstado) { reportes[index].estado = nuevoEstado; renderRep(); render(); }
-function eliminarReporte(index) { if(confirm("¿Eliminar?")) { reportes.splice(index, 1); renderRep(); render(); } }
+function cambiarEstadoReporte(index, nuevoEstado) { reportes[index].estado = nuevoEstado; renderRep(); render(); sbSet("rep", JSON.stringify(reportes)); }
+function eliminarReporte(index) { if(confirm("¿Eliminar?")) { reportes.splice(index, 1); renderRep(); render(); sbSet("rep", JSON.stringify(reportes)); } }
 
 reporteForm.onsubmit = e => {
     e.preventDefault();
     let asignadoA = getFiltroUsuario() !== "todos" ? getFiltroUsuario() : usuarioActivo.username;
     reportes.push({ usuario: asignadoA, titulo: r_titulo.value, origen: r_origen.value, tipo: r_tipo.value, criticidad: r_criticidad.value, desc: r_desc.value, estado: r_estado.value });
     reporteForm.reset(); renderRep(); render();
+    sbSet("rep", JSON.stringify(reportes));
 };
 
 /* ASOCIADOS */
@@ -1720,6 +1814,7 @@ function cambiarEstadoAsociado(index, nuevoEst) {
     asociados[index].estatus = nuevoEst;
     asociados[index].historial.push({ fecha: new Date().toLocaleString(), detalle: `Cambió estatus de [${viejoEst}] a [${nuevoEst}] (Por: ${usuarioActivo.nombre})` });
     ejecutarFiltroGlobal();
+    sbSet("asoc", JSON.stringify(asociados));
 }
 
 function reasignarAsociado(index, nuevoResponsable) {
@@ -1727,9 +1822,10 @@ function reasignarAsociado(index, nuevoResponsable) {
     asociados[index].usuario = nuevoResponsable;
     asociados[index].historial.push({ fecha: new Date().toLocaleString(), detalle: `Traspasado desde [${USUARIOS_VALIDOS[viejoResp]?.nombre || 'Admin'}] hacia [${USUARIOS_VALIDOS[nuevoResponsable].nombre}]` });
     ejecutarFiltroGlobal();
+    sbSet("asoc", JSON.stringify(asociados));
 }
 
-function eliminarAsociado(index) { if(confirm("¿Eliminar?")) { asociados.splice(index, 1); ejecutarFiltroGlobal(); } }
+function eliminarAsociado(index) { if(confirm("¿Eliminar?")) { asociados.splice(index, 1); ejecutarFiltroGlobal(); sbSet("asoc", JSON.stringify(asociados)); } }
 
 asociadoForm.onsubmit = e => {
     e.preventDefault();
@@ -1743,6 +1839,7 @@ asociadoForm.onsubmit = e => {
         historial: [{ fecha: new Date().toLocaleString(), detalle: `Alta de registro (${horasAsoc.toFixed(2)} hrs de gestión). Asignado a: ${USUARIOS_VALIDOS[asignadoA].nombre}` }]
     });
     asociadoForm.reset(); ejecutarFiltroGlobal();
+    sbSet("asoc", JSON.stringify(asociados));
 };
 
 /* EXPORTS */
@@ -1839,7 +1936,12 @@ function updateCharts() {
     renderModuloVisualAccidentabilidad();
 }
 
-verificarSesion();
+// Carga datos desde Supabase al iniciar, activa realtime y verifica la sesión activa
+(async () => {
+    await cargarDatosDesdeSupabase();
+    activarSincronizacionRealtime();
+    verificarSesion();
+})();
 </script>
 </body>
 </html>
