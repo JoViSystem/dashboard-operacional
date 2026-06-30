@@ -807,6 +807,7 @@ table select {
                         <option value="notions">Notions Dominicana</option>
                         <option value="now">Now Logistics</option>
                         <option value="gtg">GTG</option>
+                        <option value="notions_group">🏢 Notions Group (Consolidado - Suma de las 3 empresas)</option>
                     </select>
                 </div>
 
@@ -1087,19 +1088,22 @@ function sbAplicarFila(key, value) {
 
 // Migración no destructiva: si un usuario guardado en Supabase no tiene "posicion"
 // (porque se creó antes de agregar este campo), se le asigna según su cargo conocido.
-// No modifica clave, rol, nombre ni ningún otro dato ya existente.
+// También normaliza a MAYÚSCULAS cualquier posición ya guardada, sin tocar clave, rol ni nombre.
 const POSICIONES_POR_DEFECTO = {
-    "dcumplimiento": "Administrador",
-    "jgarcia": "Inspector",
-    "jhilario": "Coordinador",
-    "vtorres": "Gerente"
+    "dcumplimiento": "ADMINISTRADOR",
+    "jgarcia": "INSPECTOR",
+    "jhilario": "COORDINADOR",
+    "vtorres": "GERENTE"
 };
 function migrarPosicionesUsuarios() {
     if (!USUARIOS_VALIDOS) return;
     let huboCambios = false;
     Object.keys(USUARIOS_VALIDOS).forEach(usr => {
         if (!USUARIOS_VALIDOS[usr].posicion) {
-            USUARIOS_VALIDOS[usr].posicion = POSICIONES_POR_DEFECTO[usr] || (USUARIOS_VALIDOS[usr].rol ? USUARIOS_VALIDOS[usr].rol.charAt(0).toUpperCase() + USUARIOS_VALIDOS[usr].rol.slice(1) : "Empleado");
+            USUARIOS_VALIDOS[usr].posicion = POSICIONES_POR_DEFECTO[usr] || (USUARIOS_VALIDOS[usr].rol ? USUARIOS_VALIDOS[usr].rol.toUpperCase() : "EMPLEADO");
+            huboCambios = true;
+        } else if (USUARIOS_VALIDOS[usr].posicion !== USUARIOS_VALIDOS[usr].posicion.toUpperCase()) {
+            USUARIOS_VALIDOS[usr].posicion = USUARIOS_VALIDOS[usr].posicion.toUpperCase();
             huboCambios = true;
         }
     });
@@ -1163,10 +1167,10 @@ function activarSincronizacionRealtime() {
 
 // ==========================================
 let USUARIOS_VALIDOS = JSON.parse(localStorage.getItem("app_usuarios")) || {
-    "dcumplimiento": { clave: "admin123", rol: "admin", nombre: "Super Administrador", posicion: "Administrador" },
-    "jgarcia": { clave: "1234", rol: "empleado", nombre: "Joan Garcia", posicion: "Inspector" },
-    "jhilario": { clave: "1234", rol: "empleado", nombre: "Jhoan Hilario", posicion: "Coordinador" },
-    "vtorres": { clave: "1234", rol: "supervisor", nombre: "Victor Torres", posicion: "Gerente" }
+    "dcumplimiento": { clave: "admin123", rol: "admin", nombre: "Super Administrador", posicion: "ADMINISTRADOR" },
+    "jgarcia": { clave: "1234", rol: "empleado", nombre: "Joan Garcia", posicion: "INSPECTOR" },
+    "jhilario": { clave: "1234", rol: "empleado", nombre: "Jhoan Hilario", posicion: "COORDINADOR" },
+    "vtorres": { clave: "1234", rol: "supervisor", nombre: "Victor Torres", posicion: "GERENTE" }
 };
 migrarPosicionesUsuarios();
 
@@ -1195,6 +1199,39 @@ let myCategoryChart = null;
 let myComplianceChart = null;
 let myCumplimientoGeneralChart = null;
 let myAccidentabilidadChart = null; 
+
+// Flujo de etapas de Asociados de Negocios y quién es responsable de completar cada una.
+// Cada usuario "cumple" su parte en cuanto el estatus avanza MÁS ALLÁ de la etapa que le toca,
+// sin importar a quién se le haya reasignado el registro después.
+const ETAPAS_ASOCIADOS = ["En depuración", "En revisión y firma", "Listo para enviar", "Enviado"];
+const RESPONSABLE_POR_ETAPA = { 0: "jgarcia", 1: "vtorres", 2: "jhilario" };
+
+function calcularCumplimientoAsociados(filtro, filtroDia) {
+    let conteo = 0, cumplidos = 0;
+    let idxEtapaUsuario = Object.keys(RESPONSABLE_POR_ETAPA).find(k => RESPONSABLE_POR_ETAPA[k] === filtro);
+
+    asociados.forEach(asoc => {
+        if (!asoc.usuario) asoc.usuario = "dcumplimiento";
+        if (!asoc.horasPorUsuario) asoc.horasPorUsuario = {};
+        if (usuarioActivo.rol === "supervisor" && asoc.usuario === "dcumplimiento") return;
+        if (filtroDia && asoc.fecha !== filtroDia) return;
+
+        if (idxEtapaUsuario !== undefined) {
+            // El usuario filtrado es uno de los 3 responsables de etapa (Joan / Víctor / Jhoan)
+            idxEtapaUsuario = parseInt(idxEtapaUsuario);
+            let idxActual = ETAPAS_ASOCIADOS.indexOf(asoc.estatus);
+            if (idxActual < idxEtapaUsuario) return; // aún no le toca a este usuario, no cuenta todavía
+            conteo++;
+            if (idxActual > idxEtapaUsuario) cumplidos++; // ya avanzó más allá de su etapa = él ya completó su parte
+        } else {
+            // Vista "todos" u otro usuario (admin, etc): criterio simple por participación + estatus final
+            if (filtro !== "todos" && !(asoc.horasPorUsuario && (filtro in asoc.horasPorUsuario))) return;
+            conteo++;
+            if (asoc.estatus === "Enviado") cumplidos++;
+        }
+    });
+    return { conteo, cumplidos };
+}
 
 function obtenerFechaHoyLocal() {
     let d = new Date();
@@ -1368,7 +1405,47 @@ function cambiarContrasenaUsuario(e) {
 /* ACCIDENTABILIDAD MULTI-EMPRESA */
 let diasTrazabilidadCalculados = 0;
 
+function calcularConsolidadoNotionsGroup() {
+    let totalDias = 0, totalColaboradores = 0, totalJornadaProm = 0, totalRecordAnterior = 0, totalAccidentes = 0, cantEmpresas = 0;
+    Object.keys(accidentabilidadMaestra).forEach(key => {
+        let em = accidentabilidadMaestra[key];
+        totalDias += em.dias || 0;
+        totalColaboradores += em.colaboradores || 0;
+        totalJornadaProm += em.jornada || 0;
+        totalRecordAnterior += em.recordAnterior || 0;
+        totalAccidentes += em.accidentes || 0;
+        cantEmpresas++;
+    });
+    return { totalDias, totalColaboradores, totalJornadaProm, totalRecordAnterior, totalAccidentes, cantEmpresas };
+}
+
 function cargarEmpresaAccidentabilidad(empresaKey) {
+    let form = document.getElementById("accidentabilidadForm");
+    let camposEditables = ["acc_fecha_actualizacion", "acc_input_dias", "acc_accidentes_periodo", "acc_colaboradores", "acc_jornada", "acc_record_anterior"];
+    let btnSubmit = form.querySelector("button[type=submit]");
+
+    if (empresaKey === "notions_group") {
+        // Vista consolidada de solo lectura: no se edita ni se guarda, es una suma calculada
+        let cons = calcularConsolidadoNotionsGroup();
+        document.getElementById("txt-btn-empresa").innerText = "Notions Group (Consolidado)";
+        document.getElementById("acc_fecha_actualizacion").value = obtenerFechaHoyLocal();
+        document.getElementById("acc_input_dias").value = cons.totalDias;
+        document.getElementById("acc_colaboradores").value = cons.totalColaboradores;
+        document.getElementById("acc_jornada").value = cons.cantEmpresas ? Math.round(cons.totalJornadaProm / cons.cantEmpresas) : 0;
+        document.getElementById("acc_record_anterior").value = cons.totalRecordAnterior;
+        document.getElementById("acc_accidentes_periodo").value = cons.totalAccidentes;
+
+        camposEditables.forEach(id => document.getElementById(id).disabled = true);
+        if (btnSubmit) { btnSubmit.disabled = true; btnSubmit.style.opacity = "0.5"; btnSubmit.style.cursor = "not-allowed"; }
+        document.getElementById("acc-banner-trazabilidad").style.display = "none";
+        calcularHorasEnCaliente();
+        return;
+    }
+
+    // Empresa real: rehabilitar edición normal
+    camposEditables.forEach(id => document.getElementById(id).disabled = false);
+    if (btnSubmit) { btnSubmit.disabled = false; btnSubmit.style.opacity = "1"; btnSubmit.style.cursor = "pointer"; }
+
     let datos = accidentabilidadMaestra[empresaKey];
     let nombresMap = { notions: "Notions Dominicana", now: "Now Logistics", gtg: "GTG" };
     document.getElementById("txt-btn-empresa").innerText = nombresMap[empresaKey];
@@ -1427,6 +1504,10 @@ function calcularHorasEnCaliente() {
 function guardarDatosAccidentabilidad(e) {
     e.preventDefault();
     let empresaKey = document.getElementById("acc_empresa_selector").value;
+    if (empresaKey === "notions_group") {
+        alert("⚠️ Notions Group es un consolidado calculado automáticamente, no se puede editar directamente. Actualiza los datos de cada empresa individual.");
+        return;
+    }
     let accidentes = parseInt(document.getElementById("acc_accidentes_periodo").value) || 0;
     let diasInput = parseInt(document.getElementById("acc_input_dias").value) || 0;
     
@@ -1759,19 +1840,8 @@ function render(){
         }
     });
 
-    // Asociados que cuentan para el indicador de cumplimiento (respeta el mismo filtro de usuario/fecha)
-    let conteoAsociadosCumplimiento = 0;
-    let asociadosEnviadosDia = 0;
-    asociados.forEach(asoc => {
-        if (!asoc.usuario) asoc.usuario = "dcumplimiento";
-        if (!asoc.horasPorUsuario) asoc.horasPorUsuario = {};
-        if (usuarioActivo.rol === "supervisor" && asoc.usuario === "dcumplimiento") return;
-        if (filtro !== "todos" && !(asoc.horasPorUsuario && (filtro in asoc.horasPorUsuario))) return;
-        if (filtroDia && asoc.fecha !== filtroDia) return;
-
-        conteoAsociadosCumplimiento++;
-        if (asoc.estatus === "Enviado") asociadosEnviadosDia++;
-    });
+    // Asociados que cuentan para el indicador de cumplimiento (respeta etapa de responsabilidad)
+    let { conteo: conteoAsociadosCumplimiento, cumplidos: asociadosEnviadosDia } = calcularCumplimientoAsociados(filtro, filtroDia);
 
     // Cumplimiento General: combina Actividades Completadas + Inducciones Vigentes + Asociados Enviados
     let totalElementosCumplimiento = conteoActividadesDia + conteoInduccionesDia + conteoAsociadosCumplimiento;
@@ -2149,17 +2219,10 @@ function updateCharts() {
     });
     let induccionesVigentesGen = induccionesFiltradas.filter(ind => hoyStrGen <= ind.fechaVencimiento).length;
 
-    let asociadosFiltradosGen = asociados.filter(asoc => {
-        if (!asoc.usuario) asoc.usuario = "dcumplimiento";
-        if (!asoc.horasPorUsuario) asoc.horasPorUsuario = {};
-        if (usuarioActivo.rol === "supervisor" && asoc.usuario === "dcumplimiento") return false;
-        if (filtroDia && asoc.fecha !== filtroDia) return false;
-        return filtro === "todos" || (asoc.horasPorUsuario && (filtro in asoc.horasPorUsuario));
-    });
-    let asociadosEnviadosGen = asociadosFiltradosGen.filter(asoc => asoc.estatus === "Enviado").length;
+    let { conteo: conteoAsociadosGen, cumplidos: asociadosEnviadosGen } = calcularCumplimientoAsociados(filtro, filtroDia);
 
     let cumplidosGen = completadas + induccionesVigentesGen + asociadosEnviadosGen;
-    let totalGen = listaFiltrada.length + induccionesFiltradas.length + asociadosFiltradosGen.length;
+    let totalGen = listaFiltrada.length + induccionesFiltradas.length + conteoAsociadosGen;
     let pendientesGen = totalGen - cumplidosGen;
 
     let ctxGen = document.getElementById("cumplimientoGeneralChart");
