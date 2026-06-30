@@ -1864,7 +1864,10 @@ function renderAsociados() {
                         <option value="Enviado" ${asoc.estatus === "Enviado" ? "selected" : ""}>🚀 Enviado</option>
                     </select>
                 </td>
-                <td><button class="btn-delete" onclick="eliminarAsociado(${i})" ${deshabilitarCampos}>🗑️ Borrar</button></td>
+                <td>
+                    <button class="btn-delete" onclick="eliminarAsociado(${i})" ${deshabilitarCampos}>🗑️ Borrar</button>
+                    ${(usuarioActivo.rol === 'admin' || asoc.usuario === usuarioActivo.username) ? `<button onclick="editarMisHorasAsociado(${i})" style="margin-left:6px; background:var(--accent-blue); color:white; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; font-size:12px;">⏱️ Mis Horas</button>` : ''}
+                </td>
             </tr>`;
         }
 
@@ -1903,10 +1906,48 @@ function cambiarEstadoAsociado(index, nuevoEst) {
     sbSet("asoc", JSON.stringify(asociados));
 }
 
+function recalcularHorasTotales(asoc) {
+    asoc.horas = Object.values(asoc.horasPorUsuario || {}).reduce((sum, h) => sum + (parseFloat(h) || 0), 0);
+}
+
 function reasignarAsociado(index, nuevoResponsable) {
-    let viejoResp = asociados[index].usuario;
-    asociados[index].usuario = nuevoResponsable;
-    asociados[index].historial.push({ fecha: new Date().toLocaleString(), detalle: `Traspasado desde [${USUARIOS_VALIDOS[viejoResp]?.nombre || 'Admin'}] hacia [${USUARIOS_VALIDOS[nuevoResponsable].nombre}]` });
+    let asoc = asociados[index];
+    let viejoResp = asoc.usuario;
+    if (!asoc.horasPorUsuario) asoc.horasPorUsuario = {};
+
+    // Cada responsable invierte su propio tiempo, independiente del de los demás
+    let horasPrevias = asoc.horasPorUsuario[nuevoResponsable] || 0;
+    let entrada = prompt(`⏱️ ¿Cuántas horas invertirá ${USUARIOS_VALIDOS[nuevoResponsable].nombre} en este asociado?`, horasPrevias > 0 ? horasPrevias : "");
+    let horasNuevas = parseFloat(entrada);
+    if (entrada === null) {
+        // Si cancela, no se pierde nada: se mantiene lo que ya hubiera (o 0) y solo se reasigna
+        horasNuevas = horasPrevias;
+    } else if (isNaN(horasNuevas) || horasNuevas < 0) {
+        horasNuevas = horasPrevias;
+    }
+
+    asoc.usuario = nuevoResponsable;
+    asoc.horasPorUsuario[nuevoResponsable] = horasNuevas;
+    recalcularHorasTotales(asoc);
+
+    asoc.historial.push({ fecha: new Date().toLocaleString(), detalle: `Traspasado desde [${USUARIOS_VALIDOS[viejoResp]?.nombre || 'Admin'}] hacia [${USUARIOS_VALIDOS[nuevoResponsable].nombre}] (${horasNuevas.toFixed(2)} hrs registradas para ${USUARIOS_VALIDOS[nuevoResponsable].nombre})` });
+    ejecutarFiltroGlobal();
+    sbSet("asoc", JSON.stringify(asociados));
+}
+
+function editarMisHorasAsociado(index) {
+    let asoc = asociados[index];
+    if (!asoc.horasPorUsuario) asoc.horasPorUsuario = {};
+    let yo = usuarioActivo.username;
+    let horasPrevias = asoc.horasPorUsuario[yo] || 0;
+    let entrada = prompt(`⏱️ ¿Cuántas horas has invertido tú (${usuarioActivo.nombre}) en este asociado?`, horasPrevias > 0 ? horasPrevias : "");
+    if (entrada === null) return;
+    let horasNuevas = parseFloat(entrada);
+    if (isNaN(horasNuevas) || horasNuevas < 0) { alert("Valor de horas inválido."); return; }
+
+    asoc.horasPorUsuario[yo] = horasNuevas;
+    recalcularHorasTotales(asoc);
+    asoc.historial.push({ fecha: new Date().toLocaleString(), detalle: `${usuarioActivo.nombre} actualizó su tiempo invertido a ${horasNuevas.toFixed(2)} hrs` });
     ejecutarFiltroGlobal();
     sbSet("asoc", JSON.stringify(asociados));
 }
