@@ -1013,7 +1013,8 @@ table select {
             <h1>📈 Indicadores Estadísticos HSE</h1>
             <div class="charts-container">
                 <div class="chart-box"><h3>Distribución por Categorías</h3><div style="position: relative; height:220px;"><canvas id="categoryChart"></canvas></div></div>
-                <div class="chart-box"><h3>Estado de Cumplimiento</h3><div style="position: relative; height:220px;"><canvas id="complianceChart"></canvas></div></div>
+                <div class="chart-box"><h3>Estado de Cumplimiento (Actividades)</h3><div style="position: relative; height:220px;"><canvas id="complianceChart"></canvas></div></div>
+                <div class="chart-box"><h3>🎯 Cumplimiento General (Actividades + Inducciones + Asociados)</h3><div style="position: relative; height:220px;"><canvas id="cumplimientoGeneralChart"></canvas></div></div>
             </div>
         </div>
 
@@ -1192,6 +1193,7 @@ let accidentabilidadMaestra = JSON.parse(localStorage.getItem("acc_master_3_comp
 
 let myCategoryChart = null;
 let myComplianceChart = null;
+let myCumplimientoGeneralChart = null;
 let myAccidentabilidadChart = null; 
 
 function obtenerFechaHoyLocal() {
@@ -1459,7 +1461,27 @@ function renderModuloVisualAccidentabilidad() {
     contenedorLista.innerHTML = "";
 
     let nombresMap = { notions: "Notions Dominicana", now: "Now Logistics", gtg: "GTG" };
-    
+
+    // CONSOLIDADO "Notions Group": suma calculada de las 3 empresas, no es editable directamente
+    let totalDias = 0, totalColaboradores = 0, totalHorasSeguras = 0, totalAccidentes = 0;
+    Object.keys(accidentabilidadMaestra).forEach(key => {
+        let em = accidentabilidadMaestra[key];
+        let calcHorasEm = em.accidentes > 0 ? 0 : em.dias * em.colaboradores * em.jornada;
+        totalDias += em.dias || 0;
+        totalColaboradores += em.colaboradores || 0;
+        totalHorasSeguras += calcHorasEm;
+        totalAccidentes += em.accidentes || 0;
+    });
+    let badgeGroup = totalAccidentes > 0 ? `<span class="badge-rojo" style="padding:1px 6px; border-radius:4px; font-size:10px;">🚨 Siniestro Activo en el Grupo</span>` : `✅ Operación Limpia`;
+    contenedorLista.innerHTML += `
+    <div style="padding: 10px; border-left: 4px solid ${totalAccidentes > 0 ? 'var(--sec-red)' : 'var(--sec-green)'}; background: #f0fdf4; border-radius: 0 6px 6px 0;">
+        <strong style="color: var(--sidebar-bg);">🏢 Notions Group (Consolidado)</strong> ${badgeGroup}<br>
+        <small style="color: #64748b;">📅 Total días sin accidentes acumulados (suma): <strong>${totalDias} días</strong></small><br>
+        <small style="color: #64748b;">👥 Colaboradores totales: <strong>${totalColaboradores}</strong></small><br>
+        <small style="color: #64748b;">⚠️ Siniestros registrados en el grupo: <strong>${totalAccidentes}</strong></small><br>
+        <small style="color: var(--sec-green); font-weight: bold;">⏱️ Horas seguras totales del grupo: ${totalHorasSeguras.toLocaleString()} hrs</small>
+    </div>`;
+
     Object.keys(accidentabilidadMaestra).forEach(key => {
         let em = accidentabilidadMaestra[key];
         let calcHoras = em.accidentes > 0 ? 0 : em.dias * em.colaboradores * em.jornada;
@@ -1484,11 +1506,12 @@ function renderModuloVisualAccidentabilidad() {
         myAccidentabilidadChart = new Chart(ctxAcc, {
             type: 'bar',
             data: {
-                labels: ["Notions Dominicana", "Now Logistics", "GTG"],
+                labels: ["Notions Group (Total)", "Notions Dominicana", "Now Logistics", "GTG"],
                 datasets: [{
                     label: 'Horas Proyectadas de Seguridad',
-                    data: [horasNotions, horasNow, horasGtg],
+                    data: [totalHorasSeguras, horasNotions, horasNow, horasGtg],
                     backgroundColor: [
+                        totalAccidentes > 0 ? '#ef4444' : '#10b981',
                         accidentabilidadMaestra.notions.accidentes > 0 ? '#ef4444' : '#2563eb', 
                         accidentabilidadMaestra.now.accidentes > 0 ? '#ef4444' : '#3b82f6', 
                         accidentabilidadMaestra.gtg.accidentes > 0 ? '#ef4444' : '#1e293b'
@@ -1722,6 +1745,8 @@ function render(){
 
     let horasDiaInducciones = 0;
     let conteoInduccionesDia = 0;
+    let induccionesVigentesDia = 0;
+    let hoyStrInd = obtenerFechaHoyLocal();
     inducciones.forEach(ind => {
         if (!ind.usuario) ind.usuario = "dcumplimiento";
         if (usuarioActivo.rol === "supervisor" && ind.usuario === "dcumplimiento") return;
@@ -1730,8 +1755,27 @@ function render(){
         if (!filtroDia || ind.fechaRegistro === filtroDia) {
             horasDiaInducciones += (ind.horas || 0);
             conteoInduccionesDia++;
+            if (hoyStrInd <= ind.fechaVencimiento) induccionesVigentesDia++;
         }
     });
+
+    // Asociados que cuentan para el indicador de cumplimiento (respeta el mismo filtro de usuario/fecha)
+    let conteoAsociadosCumplimiento = 0;
+    let asociadosEnviadosDia = 0;
+    asociados.forEach(asoc => {
+        if (!asoc.usuario) asoc.usuario = "dcumplimiento";
+        if (!asoc.horasPorUsuario) asoc.horasPorUsuario = {};
+        if (usuarioActivo.rol === "supervisor" && asoc.usuario === "dcumplimiento") return;
+        if (filtro !== "todos" && !(asoc.horasPorUsuario && (filtro in asoc.horasPorUsuario))) return;
+        if (filtroDia && asoc.fecha !== filtroDia) return;
+
+        conteoAsociadosCumplimiento++;
+        if (asoc.estatus === "Enviado") asociadosEnviadosDia++;
+    });
+
+    // Cumplimiento General: combina Actividades Completadas + Inducciones Vigentes + Asociados Enviados
+    let totalElementosCumplimiento = conteoActividadesDia + conteoInduccionesDia + conteoAsociadosCumplimiento;
+    let totalCumplidosCumplimiento = okDia + induccionesVigentesDia + asociadosEnviadosDia;
 
     let granTotalHorasDia = horasDiaActividades + horasDiaAsociados + horasDiaInducciones;
     let granTotalCargaObjetos = conteoActividadesDia + conteoAsociadosDia + conteoInduccionesDia;
@@ -1744,7 +1788,7 @@ function render(){
 
     document.getElementById("total").innerText = granTotalCargaObjetos;
     document.getElementById("horas").innerText = granTotalHorasDia.toFixed(2) + " hrs";
-    document.getElementById("cumplimiento").innerText = conteoActividadesDia ? (okDia / conteoActividadesDia * 100).toFixed(0) + "%" : "100%";
+    document.getElementById("cumplimiento").innerText = totalElementosCumplimiento ? (totalCumplidosCumplimiento / totalElementosCumplimiento * 100).toFixed(0) + "%" : "100%";
     document.getElementById("dash-pendientes").innerText = pendientesDia;
     document.getElementById("dash-reportes").innerText = reportesAbiertosConteo;
     
@@ -2091,6 +2135,39 @@ function updateCharts() {
         myComplianceChart = new Chart(ctxComp, {
             type: 'bar',
             data: { labels: ["Completadas", "Pendientes/Proceso"], datasets: [{ label: 'Actividades', data: [completadas, pendientesEnProceso], backgroundColor: ['#10b981', '#f59e0b'] }] },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
+
+    // CUMPLIMIENTO GENERAL: combina Actividades Completadas + Inducciones Vigentes + Asociados Enviados
+    let hoyStrGen = obtenerFechaHoyLocal();
+    let induccionesFiltradas = inducciones.filter(ind => {
+        if (!ind.usuario) ind.usuario = "dcumplimiento";
+        if (usuarioActivo.rol === "supervisor" && ind.usuario === "dcumplimiento") return false;
+        if (filtroDia && ind.fechaRegistro !== filtroDia) return false;
+        return filtro === "todos" || ind.usuario === filtro;
+    });
+    let induccionesVigentesGen = induccionesFiltradas.filter(ind => hoyStrGen <= ind.fechaVencimiento).length;
+
+    let asociadosFiltradosGen = asociados.filter(asoc => {
+        if (!asoc.usuario) asoc.usuario = "dcumplimiento";
+        if (!asoc.horasPorUsuario) asoc.horasPorUsuario = {};
+        if (usuarioActivo.rol === "supervisor" && asoc.usuario === "dcumplimiento") return false;
+        if (filtroDia && asoc.fecha !== filtroDia) return false;
+        return filtro === "todos" || (asoc.horasPorUsuario && (filtro in asoc.horasPorUsuario));
+    });
+    let asociadosEnviadosGen = asociadosFiltradosGen.filter(asoc => asoc.estatus === "Enviado").length;
+
+    let cumplidosGen = completadas + induccionesVigentesGen + asociadosEnviadosGen;
+    let totalGen = listaFiltrada.length + induccionesFiltradas.length + asociadosFiltradosGen.length;
+    let pendientesGen = totalGen - cumplidosGen;
+
+    let ctxGen = document.getElementById("cumplimientoGeneralChart");
+    if(ctxGen) {
+        if (myCumplimientoGeneralChart) myCumplimientoGeneralChart.destroy();
+        myCumplimientoGeneralChart = new Chart(ctxGen, {
+            type: 'doughnut',
+            data: { labels: ["Cumplido", "Pendiente"], datasets: [{ data: [cumplidosGen, pendientesGen], backgroundColor: ['#10b981', '#ef4444'] }] },
             options: { responsive: true, maintainAspectRatio: false }
         });
     }
