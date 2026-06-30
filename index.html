@@ -1673,7 +1673,11 @@ function render(){
         if (!asoc.usuario) asoc.usuario = "dcumplimiento";
         if (!asoc.horasPorUsuario) asoc.horasPorUsuario = {};
         if (usuarioActivo.rol === "supervisor" && asoc.usuario === "dcumplimiento") return;
-        if (filtro !== "todos" && asoc.usuario !== filtro) return;
+
+        // IMPORTANTE: no filtrar por "responsable actual", porque al reasignar el registro
+        // a otra persona, el responsable anterior ya NO es asoc.usuario, pero sus horas
+        // invertidas siguen siendo suyas y deben seguir contando en su dashboard.
+        if (filtro !== "todos" && !(asoc.horasPorUsuario && (filtro in asoc.horasPorUsuario))) return;
 
         if (!filtroDia || asoc.fecha === filtroDia) {
             // Si hay filtro por usuario específico, sumar solo sus horas individuales
@@ -1915,22 +1919,17 @@ function reasignarAsociado(index, nuevoResponsable) {
     let viejoResp = asoc.usuario;
     if (!asoc.horasPorUsuario) asoc.horasPorUsuario = {};
 
-    // Cada responsable invierte su propio tiempo, independiente del de los demás
-    let horasPrevias = asoc.horasPorUsuario[nuevoResponsable] || 0;
-    let entrada = prompt(`⏱️ ¿Cuántas horas invertirá ${USUARIOS_VALIDOS[nuevoResponsable].nombre} en este asociado?`, horasPrevias > 0 ? horasPrevias : "");
-    let horasNuevas = parseFloat(entrada);
-    if (entrada === null) {
-        // Si cancela, no se pierde nada: se mantiene lo que ya hubiera (o 0) y solo se reasigna
-        horasNuevas = horasPrevias;
-    } else if (isNaN(horasNuevas) || horasNuevas < 0) {
-        horasNuevas = horasPrevias;
-    }
-
+    // Solo se traspasa la responsabilidad. Las horas del responsable anterior
+    // se quedan intactas en su propio registro (horasPorUsuario[viejoResp]).
+    // El nuevo responsable registrará SUS PROPIAS horas más adelante con
+    // el botón "⏱️ Mis Horas", cuando él mismo entre al sistema.
     asoc.usuario = nuevoResponsable;
-    asoc.horasPorUsuario[nuevoResponsable] = horasNuevas;
+    if (!(nuevoResponsable in asoc.horasPorUsuario)) {
+        asoc.horasPorUsuario[nuevoResponsable] = 0;
+    }
     recalcularHorasTotales(asoc);
 
-    asoc.historial.push({ fecha: new Date().toLocaleString(), detalle: `Traspasado desde [${USUARIOS_VALIDOS[viejoResp]?.nombre || 'Admin'}] hacia [${USUARIOS_VALIDOS[nuevoResponsable].nombre}] (${horasNuevas.toFixed(2)} hrs registradas para ${USUARIOS_VALIDOS[nuevoResponsable].nombre})` });
+    asoc.historial.push({ fecha: new Date().toLocaleString(), detalle: `Traspasado desde [${USUARIOS_VALIDOS[viejoResp]?.nombre || 'Admin'}] hacia [${USUARIOS_VALIDOS[nuevoResponsable].nombre}]` });
     ejecutarFiltroGlobal();
     sbSet("asoc", JSON.stringify(asociados));
 }
